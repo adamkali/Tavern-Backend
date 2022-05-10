@@ -22,7 +22,7 @@ func main() {
 
 	// TODO
 	// ALLOWED METHODS GET, PUT, DELETE
-	// http.HandleFunc("/users/:id", h.User)
+	http.HandleFunc("/users/", h.User)
 
 	// Handle errors // #2
 	err := http.ListenAndServe(":8000", nil)
