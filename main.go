@@ -15,14 +15,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	h := controllers.NewUserHandler() //#2
 
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/api", handler)
 
 	// ALLOWED METHODS GET, POST
-	http.HandleFunc("/users", h.Users) // #2
+	http.HandleFunc("/api/users", h.Users) // #2
 
-	// TODO
 	// ALLOWED METHODS GET, PUT, DELETE
-	http.HandleFunc("/users/", h.User)
+	http.HandleFunc("/api/users/", h.User)
 
 	// Handle errors // #2
 	err := http.ListenAndServe(":8000", nil)

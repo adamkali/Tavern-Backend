@@ -33,10 +33,11 @@ func (h *userHandler) User(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		h.getUserByID(w, r)
 		return
-	/*case "PUT"
-		// h.updateUserByID(w, r)
-	case "DELETE":
-		// h.deleteUserByID(w, r)*/
+	case "PUT":
+		h.updateUserByID(w, r)
+		return
+	/*case "DELETE":
+	// h.deleteUserByID(w, r)*/
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed."))
@@ -144,21 +145,142 @@ func (h *userHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 	var data models.User
 
 	path := strings.Split(r.URL.String(), "/")
-	if len(path) != 3 {
+	if len(path) != 4 {
 		response.Message = "Insufficent path..."
 		response.Successful = false
 		response.Data = models.User{}
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(response.UDRWrite())
+		return
 	}
 
-	userId := string(path[2])
+	userId := string(path[3])
 	if len(userId) != 32 {
 		response.Message = "Guid length not long enough"
 		response.Successful = false
 		response.Data = models.User{}
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(response.UDRWrite())
+		return
+	}
+
+	h.Lock()
+	i := 0
+	for _, user := range h.store {
+		temp := user
+		if temp.ID == userId {
+			data = user
+		}
+		i++
+	}
+	h.Unlock()
+
+	if data.ID == "" {
+		response.Message = "Could not find user with that Guid..."
+		response.Successful = false
+		response.Data = models.User{ID: userId}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(response.UDRWrite())
+		return
+	}
+
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response.OK(data))
+	return
+}
+
+// PUT api/users/:id
+func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
+	var response models.UserDetailedResponse
+
+	path := strings.Split(r.URL.String(), "/")
+	if len(path) != 4 {
+		response.Message = "Insufficent path..."
+		response.Successful = false
+		response.Data = models.User{}
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(response.UDRWrite())
+		return
+	}
+
+	userId := string(path[3])
+	if len(userId) != 32 {
+		response.Message = "Guid length not long enough"
+		response.Successful = false
+		response.Data = models.User{}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(response.UDRWrite())
+		return
+	}
+
+	contentType := r.Header.Get("content-type")
+	if contentType != "application/json" {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		response.Data = models.User{}
+		response.Successful = false
+		response.Message = fmt.Sprintf("Application data is not application/json, got: {%s}", contentType)
+		w.Write(response.UDRWrite())
+		return
+	}
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+
+	var user models.User
+	err = json.Unmarshal(bodyBytes, &user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(response.ConsumeError(err))
+		return
+	}
+
+	var temp models.User
+	h.Lock()
+	for _, usr := range h.store {
+		if usr.ID == userId {
+			temp = usr
+		}
+	}
+
+	if temp.Username == "" {
+		w.WriteHeader(http.StatusNotModified)
+		response.Data = user
+		response.Successful = false
+		response.Message = fmt.Sprintf("UserID \"%s\" was not found", userId)
+		h.Unlock()
+		w.Write(response.UDRWrite())
+		return
+	}
+	user.ID = userId
+	h.store[temp.ID] = user
+	defer h.Unlock()
+
+	w.Write(response.OK(user))
+	return
+}
+
+func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
+	var response models.UserDetailedResponse
+	var data models.User
+
+	path := strings.Split(r.URL.String(), "/")
+	if len(path) != 4 {
+		response.Message = "Insufficent path..."
+		response.Successful = false
+		response.Data = models.User{}
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(response.UDRWrite())
+		return
+	}
+
+	userId := string(path[3])
+	if len(userId) != 32 {
+		response.Message = "Guid length not long enough"
+		response.Successful = false
+		response.Data = models.User{}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(response.UDRWrite())
+		return
 	}
 
 	h.Lock()
@@ -168,17 +290,18 @@ func (h *userHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 			data = user
 		}
 	}
-
 	if data.ID == "" {
-		response.Message = "Could not find user with that Guid..."
+		w.WriteHeader(http.StatusNotModified)
+		response.Message = fmt.Sprintf(
+			"The UserID: \"%s\" was not found, could not delete.", userId)
 		response.Successful = false
-		response.Data = models.User{ID: userId}
-		w.WriteHeader(http.StatusBadRequest)
+		response.Data = data
 		w.Write(response.UDRWrite())
+		return
 	}
+	delete(h.store, userId)
+	h.Unlock()
 
-	w.Header().Add("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response.OK(data))
+	response.OK(data)
 	return
 }
