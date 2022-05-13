@@ -1,6 +1,8 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type User struct {
 	ID              string   `json:"id"`
@@ -58,7 +60,7 @@ type GroupDetailedResponse struct {
 	Message    string `json:"message"`
 }
 
-func (u UserDetailedResponse) UDRWrite() []byte {
+func (u UserDetailedResponse) UDRWrite(w http.ResponseWritter) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -66,7 +68,7 @@ func (u UserDetailedResponse) UDRWrite() []byte {
 	return jsonBytes
 }
 
-func (u UsersDetailedResponse) UDRWrite() []byte {
+func (u UsersDetailedResponse) UDRWrite(w http.ResponseWritter) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -74,7 +76,7 @@ func (u UsersDetailedResponse) UDRWrite() []byte {
 	return jsonBytes
 }
 
-func (u GroupDetailedResponse) UDRWrite() []byte {
+func (u GroupDetailedResponse) UDRWrite(w http.ResponseWritter) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -82,42 +84,42 @@ func (u GroupDetailedResponse) UDRWrite() []byte {
 	return jsonBytes
 }
 
-func (u UserDetailedResponse) ConsumeError(err error) []byte {
+func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = User{}
 	return u.UDRWrite()
 }
 
-func (u UserDetailedResponse) OK(user User) []byte {
+func (u UserDetailedResponse) OK(user User, w http.ResponseWritter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
 	return u.UDRWrite()
 }
 
-func (u UsersDetailedResponse) ConsumeError(err error) []byte {
+func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = nil
 	return u.UDRWrite()
 }
 
-func (u UsersDetailedResponse) OK(user Users) []byte {
+func (u UsersDetailedResponse) OK(user Users, w http.ResponseWritter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
 	return u.UDRWrite()
 }
 
-func (u GroupDetailedResponse) ConsumeError(err error) []byte {
+func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = Group{}
 	return u.UDRWrite()
 }
 
-func (u GroupDetailedResponse) OK(user Group) []byte {
+func (u GroupDetailedResponse) OK(user Group, w http.ResponseWritter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
