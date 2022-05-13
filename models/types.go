@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"net/http"
 )
 
 type User struct {
@@ -60,68 +61,101 @@ type GroupDetailedResponse struct {
 	Message    string `json:"message"`
 }
 
-func (u UserDetailedResponse) UDRWrite(w http.ResponseWritter) {
+func (u UserDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
 	}
-	return jsonBytes
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u UsersDetailedResponse) UDRWrite(w http.ResponseWritter) {
+func (u UsersDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
 	}
-	return jsonBytes
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u GroupDetailedResponse) UDRWrite(w http.ResponseWritter) {
+func (u GroupDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
 	}
-	return jsonBytes
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
+func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = User{}
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u UserDetailedResponse) OK(user User, w http.ResponseWritter) {
+func (u UserDetailedResponse) OK(user User, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
+func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = nil
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u UsersDetailedResponse) OK(user Users, w http.ResponseWritter) {
+func (u UsersDetailedResponse) OK(user Users, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWritter) {
+func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
 	u.Data = Group{}
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
 
-func (u GroupDetailedResponse) OK(user Group, w http.ResponseWritter) {
+func (u GroupDetailedResponse) OK(user Group, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
 	u.Data = user
-	return u.UDRWrite()
+	jsonBytes, err := json.Marshal(u)
+	if err != nil {
+		panic(err.Error())
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
 }
