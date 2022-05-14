@@ -82,15 +82,13 @@ func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	_, err := json.Marshal(users)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(response.ConsumeError(err))
+		response.ConsumeError(err, w, http.StatusInternalServerError)
 		return
 	}
 
 	// On success we can now write the response!
 	w.Header().Add("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response.OK(users))
+	response.OK(users, w)
 	return
 }
 
@@ -102,25 +100,33 @@ func (h *userHandler) post(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(response.ConsumeError(err))
+		response.ConsumeError(
+			err,
+			w,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	contentType := r.Header.Get("content-type")
 	if contentType != "application/json" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		response.Data = models.User{}
-		response.Successful = false
-		response.Message = fmt.Sprintf("Application data is not application/json, got: {%s}", contentType)
+		response.UDRWrite(
+			w,
+			http.StatusUnsupportedMediaType,
+			fmt.Sprintf("Application data is not application/json, got: {%s}", contentType),
+			false,
+		)
 		return
 	}
 
 	var user models.User
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.ConsumeError(err))
+		response.ConsumeError(
+			err,
+			w,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -129,7 +135,7 @@ func (h *userHandler) post(w http.ResponseWriter, r *http.Request) {
 	h.store[user.ID] = user
 	defer h.Unlock()
 
-	w.Write(response.OK(user))
+	response.OK(user, w)
 	return
 }
 
@@ -146,21 +152,23 @@ func (h *userHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.Split(r.URL.String(), "/")
 	if len(path) != 4 {
-		response.Message = "Insufficent path..."
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusNotFound,
+			"Insufficent path...",
+			false,
+		)
 		return
 	}
 
 	userId := string(path[3])
 	if len(userId) != 32 {
-		response.Message = "Guid length not long enough"
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid length not lonf enough",
+			false,
+		)
 		return
 	}
 
@@ -176,17 +184,18 @@ func (h *userHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 	h.Unlock()
 
 	if data.ID == "" {
-		response.Message = "Could not find user with that Guid..."
-		response.Successful = false
 		response.Data = models.User{ID: userId}
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusNotModified,
+			"User not found.",
+			false,
+		)
 		return
 	}
 
 	w.Header().Add("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response.OK(data))
+	response.OK(data, w)
 	return
 }
 
@@ -196,31 +205,34 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.Split(r.URL.String(), "/")
 	if len(path) != 4 {
-		response.Message = "Insufficent path..."
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusNotFound,
+			"Insufficent Path",
+			false,
+		)
 		return
 	}
 
 	userId := string(path[3])
 	if len(userId) != 32 {
-		response.Message = "Guid length not long enough"
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid not long enough",
+			false,
+		)
 		return
 	}
 
 	contentType := r.Header.Get("content-type")
 	if contentType != "application/json" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		response.Data = models.User{}
-		response.Successful = false
-		response.Message = fmt.Sprintf("Application data is not application/json, got: {%s}", contentType)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusUnsupportedMediaType,
+			"Content Type needs to be application/json.",
+			false,
+		)
 		return
 	}
 
@@ -229,8 +241,9 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.ConsumeError(err))
+		response.ConsumeError(
+			err,
+
 		return
 	}
 

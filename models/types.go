@@ -61,7 +61,15 @@ type GroupDetailedResponse struct {
 	Message    string `json:"message"`
 }
 
-func (u UserDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
+// UDRWrite(w http.ResponseWriter, code int, message string)
+//
+// This is a method to diplay any text in detailed responses
+// To the http.ResponseWriter. It will dump the message into
+// The json displayed the client
+
+func (u UserDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
+	u.Successful = successful
+	u.Message = message
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -70,7 +78,14 @@ func (u UserDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	w.Write(jsonBytes)
 }
 
-func (u UsersDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
+// UDRWrite(w http.ResponseWriter, code int, message string)
+//
+// This is a method to diplay any text in detailed responses
+// To the http.ResponseWriter. It will dump the message into
+// The json displayed the client
+func (u UsersDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
+	u.Successful = successful
+	u.Message = message
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -79,7 +94,14 @@ func (u UsersDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	w.Write(jsonBytes)
 }
 
-func (u GroupDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
+// UDRWrite(w http.ResponseWriter, code int, message string)
+//
+// This is a method to diplay any text in detailed responses
+// To the http.ResponseWriter. It will dump the message into
+// The json displayed the client
+func (u GroupDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
+	u.Successful = successful
+	u.Message = message
 	jsonBytes, err := json.Marshal(u)
 	if err != nil {
 		panic(err.Error())
@@ -88,6 +110,17 @@ func (u GroupDetailedResponse) UDRWrite(w http.ResponseWriter, code int) {
 	w.Write(jsonBytes)
 }
 
+// ConumeError(err error, w http.ResponseWriter, code int)
+//
+// An error cosumer made to make the server requests as client
+// friendly as possible.
+//
+// params:
+// 	err Error -> This is any error that can be produced by go
+//	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
+//	code int -> This is designed to contian http.StatusOK or
+//		any of the http statuses.
 func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
@@ -100,6 +133,17 @@ func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWriter, cod
 	w.Write(jsonBytes)
 }
 
+// OK(user User, w http.ResponseWriter)
+//
+// A friendly status Ok writter to the web console to write the data
+// set that the request was successful, and set the that the function
+// is ready to be returned.
+//
+// params:
+// 	user User -> This is the main data that we want to send back
+//		to who ever is requesting the data.
+// 	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
 func (u UserDetailedResponse) OK(user User, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
@@ -108,10 +152,21 @@ func (u UserDetailedResponse) OK(user User, w http.ResponseWriter) {
 	if err != nil {
 		panic(err.Error())
 	}
-	w.WriteHeader(code)
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
 
+// ConumeError(err error, w http.ResponseWriter, code int)
+//
+// An error cosumer made to make the server requests as client
+// friendly as possible.
+//
+// params:
+// 	err Error -> This is any error that can be produced by go
+//	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
+//	code int -> This is designed to contian http.StatusOK or
+//		any of the http statuses.
 func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
@@ -124,6 +179,17 @@ func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWriter, co
 	w.Write(jsonBytes)
 }
 
+// OK(user User, w http.ResponseWriter)
+//
+// A friendly status Ok writter to the web console to write the data
+// set that the request was successful, and set the that the function
+// is ready to be returned.
+//
+// params:
+// 	user Users -> This is the main data that we want to send back
+//		to who ever is requesting the data.
+// 	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
 func (u UsersDetailedResponse) OK(user Users, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
@@ -132,10 +198,21 @@ func (u UsersDetailedResponse) OK(user Users, w http.ResponseWriter) {
 	if err != nil {
 		panic(err.Error())
 	}
-	w.WriteHeader(code)
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
 
+// ConumeError(err error, w http.ResponseWriter, code int)
+//
+// An error cosumer made to make the server requests as client
+// friendly as possible.
+//
+// params:
+// 	err Error -> This is any error that can be produced by go
+//	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
+//	code int -> This is designed to contian http.StatusOK or
+//		any of the http statuses.
 func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
 	u.Message = err.Error()
 	u.Successful = false
@@ -148,6 +225,17 @@ func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWriter, co
 	w.Write(jsonBytes)
 }
 
+// OK(user Group, w http.ResponseWriter)
+//
+// A friendly status Ok writter to the web console to write the data
+// set that the request was successful, and set the that the function
+// is ready to be returned.
+//
+// params:
+// 	user Group -> This is the main data that we want to send back
+//		to who ever is requesting the data.
+// 	w http.ResponseWriter -> The writer incharge of outputting
+//		to the web console that gets responses.
 func (u GroupDetailedResponse) OK(user Group, w http.ResponseWriter) {
 	u.Message = "OK"
 	u.Successful = true
@@ -156,6 +244,6 @@ func (u GroupDetailedResponse) OK(user Group, w http.ResponseWriter) {
 	if err != nil {
 		panic(err.Error())
 	}
-	w.WriteHeader(code)
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
