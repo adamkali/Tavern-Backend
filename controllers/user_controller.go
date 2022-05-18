@@ -36,8 +36,9 @@ func (h *userHandler) User(w http.ResponseWriter, r *http.Request) {
 	case "PUT":
 		h.updateUserByID(w, r)
 		return
-	/*case "DELETE":
-	// h.deleteUserByID(w, r)*/
+	case "DELETE":
+		h.deleteUserByID(w, r)
+		return
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed."))
@@ -243,7 +244,9 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.ConsumeError(
 			err,
-
+			w,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -256,43 +259,47 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if temp.Username == "" {
-		w.WriteHeader(http.StatusNotModified)
-		response.Data = user
-		response.Successful = false
-		response.Message = fmt.Sprintf("UserID \"%s\" was not found", userId)
+		response.UDRWrite(
+			w,
+			http.StatusNotModified,
+			"User was not found.",
+			false,
+		)
 		h.Unlock()
-		w.Write(response.UDRWrite())
 		return
 	}
 	user.ID = userId
 	h.store[temp.ID] = user
 	defer h.Unlock()
 
-	w.Write(response.OK(user))
+	response.Ok(user, w)
 	return
 }
 
+// DELETE /api/users/{id}
 func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 	var response models.UserDetailedResponse
 	var data models.User
 
 	path := strings.Split(r.URL.String(), "/")
 	if len(path) != 4 {
-		response.Message = "Insufficent path..."
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusNotFound,
+			"Insufficent Path",
+			false,
+		)
 		return
 	}
 
 	userId := string(path[3])
 	if len(userId) != 32 {
-		response.Message = "Guid length not long enough"
-		response.Successful = false
-		response.Data = models.User{}
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid not long enough",
+			false,
+		)
 		return
 	}
 
@@ -304,17 +311,18 @@ func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if data.ID == "" {
-		w.WriteHeader(http.StatusNotModified)
-		response.Message = fmt.Sprintf(
-			"The UserID: \"%s\" was not found, could not delete.", userId)
-		response.Successful = false
-		response.Data = data
-		w.Write(response.UDRWrite())
+		response.UDRWrite(
+			w,
+			http.StatusNotModified,
+			"User was not found.",
+			false,
+		)
+		h.Unlock()
 		return
 	}
 	delete(h.store, userId)
 	h.Unlock()
 
-	response.OK(data)
+	response.OK(data, w)
 	return
 }

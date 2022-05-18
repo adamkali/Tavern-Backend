@@ -1,4 +1,4 @@
-# Roadmap for Tavern 
+# Roadmap for Tavern
 
 ## BASIC FUNCTIONALITY 1/4
 
@@ -10,14 +10,12 @@
     - [x] DELETE
 
 * Create `api/characters` endpoints ❌
-    - [ ] GET ALL
-    - [ ] GET BY ID
-    - [ ] POST ONE
-    - [ ] PUT ONE BY ID
-    - [ ] DELETE
+    - [ ] GET BY ALL FOR USER
+    - [ ] POST ONE FOR USER
+    - [ ] UPDATE ONE FOR USER
+    - [ ] DELETE ONE FROM USER
 
-* Create `api/plots` endpoints ❌
-    - [ ] GET ALL
+* Create `api/plots` endpoints for a user ❌
     - [ ] GET BY ID
     - [ ] POST ONE
     - [ ] PUT ONE BY ID
@@ -25,7 +23,7 @@
 
 * Create repositorys ❌
     - [ ] CONNECT TO MYSQL
-    - [ ] CREATE A SQL DATABASE
+    - [_] CREATE A SQL DATABASE
     - [ ] CREATE TABLES
     - [ ] IMPLEMENT TABLES INTO ENDPOINTS
 
@@ -34,7 +32,7 @@
 ### V1 BACKEND
 
 * Refactor endpoints to be more abstract ❌
-    - [ ] IOWRITER ABSTRACTION
+    - [x] IOWRITER ABSTRACTION
     - [ ] STRUCT ABSTRACTION
     - [ ] REPOSITORY ABSTRACTION
     - [ ] ADD CONCURRENCY
@@ -50,19 +48,19 @@
     - [ ] Messaging
     - [ ] Swipe
     - [ ] Photo Storeing
-    - [ ] Geolocation 
+    - [ ] Geolocation
 
-### V1 FRONTEND 
+### V1 FRONTEND
 
 * Make a mock app ❌
     - [ ] MAKE COLORSCHEME
     - [ ] MAKE BASIC MOCKUP AND LOOK AND FEEL
     - [ ] BIO PAGE
     - [ ] SWIPE PAGE
-        * [ ] SUCCESS 
+        * [ ] SUCCESS
         * [ ] NAT TWENTY
         * [ ] FALIURE
-    - [ ] MESSAGE PAGE 
+    - [ ] MESSAGE PAGE
         * [ ] HAVE CHATS FOR INDIVIDUALS
         * [ ] HAVE CHATS FOR GROUPS
         * [ ] HAVE DICE GAMES
@@ -80,7 +78,7 @@
 
 * Implement authentication  ❌
     - [ ] Implement auth api's and tokens
-    - [ ] Implement login 
+    - [ ] Implement login
 
 * Implement User settings ❌
     - [ ] store user settings in NoSQL
@@ -96,7 +94,7 @@
     - [ ] Refine components
     - [ ] Implement multiple themes
     - [ ] 3D?
-    - [ ] Icon 
+    - [ ] Icon
 
 ## TAVERN V3 0/3
 
