@@ -5,40 +5,49 @@ import (
 	"net/http"
 )
 
+type Plot struct {
+	ID     string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	Name   string `json:"plot_name" gorm:"column:name;type:varchar(128) not null"`
+	Plot   string `json:"plot" grom:"column:plot;type:text not null"`
+	UserID string `json:"-"`
+	//	Parent User   `json:"user;omitempty" gorm:"foreignKey:UserFk;refernces:ID"`
+}
+
+type Character struct {
+	ID              string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	Name            string `json:"character_name" gorm:"column:name;type:varchar(128) not null"`
+	Backstory       string `json:"back_story" grom:"column:back_story;type:text not null"`
+	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
+	Strength        int    `json:"strength" gorm:"column:strength;type: tinyint not null"`
+	Dexterity       int    `json:"dexterity" gorm:"column:dexterity;type: tinyint not null"`
+	Constitution    int    `json:"constitution" gorm:"column:constitution;type: tinyint not null"`
+	Intelligence    int    `json:"intelligence" gorm:"column:intelligence;type: tinyint not null"`
+	Wisdom          int    `json:"wisdom" gorm:"column:wisdom;type: tinyint not null"`
+	Charisma        int    `json:"charisma" gorm:"column:charisma;type: tinyint not null"`
+	CharacterClass  string `json:"character_class" grom:"column:character_class;type:varchar(64) not null"`
+	CharacterLevel  int    `json:"character_level" gorm:"column:character_level;type: tinyint not null"`
+	CharacterTraits string `json:"character_traits" grom:"column:character_traits;type:text not null"`
+	UserID          string `json:"-"`
+	//	Parent          User   `json:"user;omitempty" gorm:"foreignKey:UserFk;refernces:ID"`
+}
+
 type User struct {
-	ID              string   `json:"id"`
-	Username        string   `json:"username"`
-	Bio             string   `json:"bio"`
-	Tags            []string `json:"tags"`
-	PlayerPrefrence string   `json:"player_prefrence"`
+	ID              string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	Username        string `json:"username" gorm:"column:username;type:varchar(128) not null"`
+	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
+	Tags            string `json:"tags" grom:"column:tags;type:text not null"`
+	PlayerPrefrence string `json:"player_prefrence" gorm:"column:player_preference;type:varchar(32)"`
+	//	Plots           []Plot      `json:"user_plots,omitempty" gorm:"foreignKey:UserID;refernces:ID"`
+	//	Characters      []Character `json:"user_characters,omitempty" gorm:"foreignKey:UserID;refernces:ID"`
+	Plots      []Plot      `json:"user_plots,omitempty"`
+	Characters []Character `json:"user_characters,omitempty"`
 
-	Plots struct {
-		ID     string `json:"id"`
-		Name   string `json:"name"`
-		Plot   string `json:"plot"`
-		UserFk string `json:"user_fk"`
-	} `json:"plots,omitempty"`
-
-	Character struct {
-		ID           string `json:"id"`
-		Name         string `json:"name"`
-		Backstory    string `json:"backstory"`
-		Bio          string `json:"bio"`
-		Strength     int    `json:"strength"`
-		Dexterity    int    `json:"dexterity"`
-		Constitution int    `json:"constitution"`
-		Intellegence int    `json:"intellegence"`
-		Wisdom       int    `json:"wisdom"`
-		Charisma     int    `json:"charisma"`
-		UserFk       string `json:"user_fk"`
-	} `json:"character,omitempty"`
-	GroupFk string `json:"group_fk,omitempty"`
+	GroupFk string `json:"group_fk,omitempty" gorm:"foreignKey:GroupFk;refernces:ID"`
 }
 
 type Group struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	GroupMembers Users  `json:"group_members"`
+	ID   string `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
+	Name string `json:"group_name" gorm:"column:name;type:varchar(128) not null"`
 }
 
 type Users []User

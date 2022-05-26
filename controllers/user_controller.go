@@ -7,18 +7,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"sync"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Make storage for your data #2
 type userHandler struct {
-	sync.Mutex
-	store map[string]models.User
+	db *gorm.DB
 }
 
-func NewUserHandler() *userHandler {
+func NewUserHandler(database gorm.DB) *userHandler {
 	return &userHandler{
-		store: map[string]models.User{},
+		db: &database,
 	}
 }
 
@@ -69,17 +70,24 @@ func (h *userHandler) Users(w http.ResponseWriter, r *http.Request) {
 // Create a getter from the userHandler #2
 // 	>=> GET /api/users
 func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
-	users := make(models.Users, len(h.store))
+	var prep []models.User
+	var users models.Users
+	result := h.db.Preload("Characters").Preload("Plots").Find(&prep)
 
 	var response models.UsersDetailedResponse
 
-	h.Lock()
-	i := 0
-	for _, user := range h.store {
-		users[i] = user
-		i++
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
 	}
-	h.Unlock()
+
+	for _, user := range prep {
+		users = append(users, user)
+	}
 
 	_, err := json.Marshal(users)
 	if err != nil {
@@ -132,9 +140,16 @@ func (h *userHandler) post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.ID = string(generateUUID())
-	h.Lock()
-	h.store[user.ID] = user
-	defer h.Unlock()
+
+	result := h.db.Create(&user)
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
 
 	response.OK(user, w)
 	return
@@ -167,22 +182,23 @@ func (h *userHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 		response.UDRWrite(
 			w,
 			http.StatusBadRequest,
-			"Guid length not lonf enough",
+			"Guid length not long enough",
 			false,
 		)
 		return
 	}
 
-	h.Lock()
-	i := 0
-	for _, user := range h.store {
-		temp := user
-		if temp.ID == userId {
-			data = user
-		}
-		i++
+	data.ID = userId
+	result := h.db.Preload(clause.Associations).First(&data)
+
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
 	}
-	h.Unlock()
 
 	if data.ID == "" {
 		response.Data = models.User{ID: userId}
@@ -250,29 +266,18 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var temp models.User
-	h.Lock()
-	for _, usr := range h.store {
-		if usr.ID == userId {
-			temp = usr
-		}
-	}
+	result := h.db.Save(&user)
 
-	if temp.Username == "" {
-		response.UDRWrite(
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
 			w,
-			http.StatusNotModified,
-			"User was not found.",
-			false,
+			http.StatusInternalServerError,
 		)
-		h.Unlock()
 		return
 	}
-	user.ID = userId
-	h.store[temp.ID] = user
-	defer h.Unlock()
 
-	response.Ok(user, w)
+	response.OK(user, w)
 	return
 }
 
@@ -303,26 +308,16 @@ func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Lock()
-	for _, user := range h.store {
-		temp := user
-		if temp.ID == userId {
-			data = user
-		}
-	}
-	if data.ID == "" {
-		response.UDRWrite(
+	result := h.db.Delete(&models.User{}, userId)
+
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
 			w,
-			http.StatusNotModified,
-			"User was not found.",
-			false,
+			http.StatusInternalServerError,
 		)
-		h.Unlock()
 		return
 	}
-	delete(h.store, userId)
-	h.Unlock()
-
 	response.OK(data, w)
 	return
 }
