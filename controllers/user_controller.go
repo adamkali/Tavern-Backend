@@ -72,7 +72,7 @@ func (h *userHandler) Users(w http.ResponseWriter, r *http.Request) {
 func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
 	var prep []models.User
 	var users models.Users
-	result := h.db.Preload("Characters").Preload("Plots").Find(&prep)
+	result := h.db.Preload("users").Preload("Plots").Find(&prep)
 
 	var response models.UsersDetailedResponse
 
@@ -266,8 +266,19 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := h.db.Save(&user)
-
+	old := &models.User{ ID: userId }
+	result := h.db.First(old)
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	user.ID = userId
+	user.ID = old.GroupID
+	result = h.db.Save(&user)
 	if result.Error != nil {
 		response.ConsumeError(
 			result.Error,

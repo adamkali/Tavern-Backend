@@ -84,7 +84,8 @@ func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := h.db.First(&data, plotId)
+	data.ID = plotId
+	result := h.db.First(&data)
 
 	if result.Error != nil {
 		response.ConsumeError(
@@ -160,9 +161,20 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-
-	result := h.db.Save(&plot)
-
+	
+	old := &models.Plot{ ID: plotId }
+	result := h.db.First(&old)
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	plot.ID = plotId
+	plot.UserID = old.UserID
+	result = h.db.Save(&plot)
 	if result.Error != nil {
 		response.ConsumeError(
 			result.Error,

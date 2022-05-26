@@ -161,8 +161,19 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result := h.db.Save(&character)
-
+	old := &models.Character{ ID: characterId }
+	result := h.db.First(old)
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	character.ID = characterId
+	character.ID = old.UserID
+	result = h.db.Save(&character)
 	if result.Error != nil {
 		response.ConsumeError(
 			result.Error,

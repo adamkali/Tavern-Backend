@@ -1,6 +1,6 @@
 # Roadmap for Tavern
 
-## BASIC FUNCTIONALITY 1/4
+## BASIC FUNCTIONALITY 4/4
 
 * Create `api/users/` endpoints ✅
     - [x] GET ALL
@@ -9,23 +9,23 @@
     - [x] PUT ONE BY ID
     - [x] DELETE
 
-* Create `api/characters` endpoints ❌
-    - [ ] GET BY ALL FOR USER
-    - [ ] POST ONE FOR USER
-    - [ ] UPDATE ONE FOR USER
-    - [ ] DELETE ONE FROM USER
+* Create `api/characters` endpoints ✅
+    - [x] GET BY ALL FOR USER
+    - [x] POST ONE FOR USER
+    - [x] UPDATE ONE FOR USER
+    - [x] DELETE ONE FROM USER
 
-* Create `api/plots` endpoints for a user ❌
-    - [ ] GET BY ID
-    - [ ] POST ONE
-    - [ ] PUT ONE BY ID
-    - [ ] DELETE
+* Create `api/plots` endpoints for a user ✅
+    - [x] GET BY ID
+    - [x] POST ONE
+    - [x] PUT ONE BY ID
+    - [x] DELETE
 
-* Create repositorys ❌
-    - [ ] CONNECT TO MYSQL
-    - [_] CREATE A SQL DATABASE
-    - [ ] CREATE TABLES
-    - [ ] IMPLEMENT TABLES INTO ENDPOINTS
+* Create repositorys ✅
+    - [x] CONNECT TO MYSQL
+    - [x] CREATE A SQL DATABASE
+    - [x] CREATE TABLES
+    - [x] IMPLEMENT TABLES INTO ENDPOINTS
 
 ## TAVERN V1 0/6
 
@@ -33,12 +33,11 @@
 
 * Refactor endpoints to be more abstract ❌
     - [x] IOWRITER ABSTRACTION
-    - [ ] STRUCT ABSTRACTION
-    - [ ] REPOSITORY ABSTRACTION
+    - [x] STRUCT ABSTRACTION
+    - [x] REPOSITORY ABSTRACTION
     - [ ] ADD CONCURRENCY
 
 * Create `/api/groups` endpoints ❌
-    - [ ] GET GROUPS
     - [ ] GET GROUP BY ID
     - [ ] UPDATE GROUP
     - [ ] DELETE GROUP

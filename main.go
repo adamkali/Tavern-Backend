@@ -41,8 +41,8 @@ func main() {
 	http.HandleFunc("/api/characters/userId/", characterH.Characters)
 
 	// PLOTS PAGES
-	http.HandleFunc("api/plot/", plotH.Plot)
-	http.HandleFunc("api/plots/userId/", plotH.Plots)
+	http.HandleFunc("/api/plot/", plotH.Plot)
+	http.HandleFunc("/api/plots/userId/", plotH.Plots)
 
 	// Handle errors // #2
 	err = http.ListenAndServe(":8000", nil)

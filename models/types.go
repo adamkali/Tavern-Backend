@@ -6,7 +6,7 @@ import (
 )
 
 type Plot struct {
-	ID     string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	ID     string `json:"id" gorm:"column:id;type:varchar(32)"`
 	Name   string `json:"plot_name" gorm:"column:name;type:varchar(128) not null"`
 	Plot   string `json:"plot" grom:"column:plot;type:text not null"`
 	UserID string `json:"-"`
@@ -14,7 +14,7 @@ type Plot struct {
 }
 
 type Character struct {
-	ID              string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	ID              string `json:"id" gorm:"column:id;type:varchar(32)"`
 	Name            string `json:"character_name" gorm:"column:name;type:varchar(128) not null"`
 	Backstory       string `json:"back_story" grom:"column:back_story;type:text not null"`
 	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
@@ -32,7 +32,7 @@ type Character struct {
 }
 
 type User struct {
-	ID              string `json:"id" gorm:"column:id;type:varchar(32);primary_key"`
+	ID              string `json:"id" gorm:"column:id;type:varchar(32)"`
 	Username        string `json:"username" gorm:"column:username;type:varchar(128) not null"`
 	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
 	Tags            string `json:"tags" grom:"column:tags;type:text not null"`
@@ -42,7 +42,7 @@ type User struct {
 	Plots      []Plot      `json:"user_plots,omitempty"`
 	Characters []Character `json:"user_characters,omitempty"`
 
-	GroupFk string `json:"group_fk,omitempty" gorm:"foreignKey:GroupFk;refernces:ID"`
+	GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
 }
 
 type Group struct {
