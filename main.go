@@ -8,6 +8,8 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/rs/cors"
 )
 
 // Make a handler for response #1
@@ -29,6 +31,15 @@ func main() {
 	userH := controllers.NewUserHandler(*db) //#2
 	characterH := controllers.NewCharacterHandler(*db)
 	plotH := controllers.NewPlotHandler(*db)
+
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:19000",
+			"http://localhost:19006",
+		},
+		AllowCredentials: true,
+		Debug: true,
+	})
 
 	http.HandleFunc("/api", handler)
 
