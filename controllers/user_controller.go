@@ -30,6 +30,7 @@ func NewUserHandler(database gorm.DB) *userHandler {
 */
 
 func (h *userHandler) User(w http.ResponseWriter, r *http.Request) {
+	enable(&w)
 	switch r.Method {
 	case "GET":
 		h.getUserByID(w, r)
@@ -47,6 +48,7 @@ func (h *userHandler) User(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *userHandler) Users(w http.ResponseWriter, r *http.Request) {
+	enable(&w)
 	switch r.Method {
 	case "GET":
 		h.get(w, r)
@@ -266,7 +268,7 @@ func (h *userHandler) updateUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	old := &models.User{ ID: userId }
+	old := &models.User{ID: userId}
 	result := h.db.First(old)
 	if result.Error != nil {
 		response.ConsumeError(
