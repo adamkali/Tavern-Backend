@@ -3,17 +3,11 @@ package main
 import (
 	"Tavern-Backend/controllers"
 	"Tavern-Backend/models"
-	"fmt"
 	"net/http"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
-
-// Make a handler for response #1
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, World!")
-}
 
 // Make the server proper.
 func main() {
@@ -30,18 +24,16 @@ func main() {
 	characterH := controllers.NewCharacterHandler(*db)
 	plotH := controllers.NewPlotHandler(*db)
 
-	http.HandleFunc("/api", handler)
-
 	// USER PAGES
 	http.HandleFunc("/api/users", userH.Users) // #2
 	http.HandleFunc("/api/users/", userH.User)
 
 	// CHARACTER PAGES
-	http.HandleFunc("/api/character/", characterH.Character)
+	http.HandleFunc("/api/characters/", characterH.Character)
 	http.HandleFunc("/api/characters/userId/", characterH.Characters)
 
 	// PLOTS PAGES
-	http.HandleFunc("/api/plot/", plotH.Plot)
+	http.HandleFunc("/api/plots/", plotH.Plot)
 	http.HandleFunc("/api/plots/userId/", plotH.Plots)
 
 	// Handle errors // #2
