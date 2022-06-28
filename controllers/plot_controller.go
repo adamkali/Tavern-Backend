@@ -27,7 +27,7 @@ func NewPlotHandler(database gorm.DB) *plotHandler {
 === === === === === === === === === === === === === === === === === === === */
 
 func (h *plotHandler) Plot(w http.ResponseWriter, r *http.Request) {
-	enable(&w)
+
 	switch r.Method {
 	case "GET":
 		h.getPlotByID(w, r)
@@ -45,7 +45,7 @@ func (h *plotHandler) Plot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *plotHandler) Plots(w http.ResponseWriter, r *http.Request) {
-	enable(&w)
+
 	switch r.Method {
 	case "GET":
 		h.getPlotsByUserID(w, r)

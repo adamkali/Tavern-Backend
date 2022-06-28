@@ -14,20 +14,22 @@ type Plot struct {
 }
 
 type Character struct {
-	ID              string `json:"id" gorm:"column:id;type:varchar(32)"`
-	Name            string `json:"character_name" gorm:"column:name;type:varchar(128) not null"`
-	Backstory       string `json:"back_story" grom:"column:back_story;type:text not null"`
-	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
-	Strength        int    `json:"strength" gorm:"column:strength;type: tinyint not null"`
-	Dexterity       int    `json:"dexterity" gorm:"column:dexterity;type: tinyint not null"`
-	Constitution    int    `json:"constitution" gorm:"column:constitution;type: tinyint not null"`
-	Intelligence    int    `json:"intelligence" gorm:"column:intelligence;type: tinyint not null"`
-	Wisdom          int    `json:"wisdom" gorm:"column:wisdom;type: tinyint not null"`
-	Charisma        int    `json:"charisma" gorm:"column:charisma;type: tinyint not null"`
-	CharacterClass  string `json:"character_class" grom:"column:character_class;type:varchar(64) not null"`
-	CharacterLevel  int    `json:"character_level" gorm:"column:character_level;type: tinyint not null"`
-	CharacterTraits string `json:"character_traits" grom:"column:character_traits;type:text not null"`
-	UserID          string `json:"-"`
+	ID                 string `json:"id" gorm:"column:id;type:varchar(32)"`
+	Name               string `json:"character_name" gorm:"column:name;type:varchar(128) not null"`
+	Backstory          string `json:"back_story" grom:"column:back_story;type:text not null"`
+	Bio                string `json:"bio" grom:"column:bio;type:text not null"`
+	Strength           int    `json:"strength" gorm:"column:strength;type: tinyint not null"`
+	Dexterity          int    `json:"dexterity" gorm:"column:dexterity;type: tinyint not null"`
+	Constitution       int    `json:"constitution" gorm:"column:constitution;type: tinyint not null"`
+	Intelligence       int    `json:"intelligence" gorm:"column:intelligence;type: tinyint not null"`
+	Wisdom             int    `json:"wisdom" gorm:"column:wisdom;type: tinyint not null"`
+	Charisma           int    `json:"charisma" gorm:"column:charisma;type: tinyint not null"`
+	CharacterClass     string `json:"character_class" grom:"column:character_class;type:varchar(64) not null"`
+	CharacterLevel     int    `json:"character_level" gorm:"column:character_level;type: tinyint not null"`
+	CharacterTraits    string `json:"character_traits" grom:"column:character_traits;type:text not null"`
+	CharacterRace      string `json:"character_race" gorm:"column:character_race;type:varchar(32) not null`
+	CharacterHitPoints string `json:"character_hit_points" gorm:"column:character_hit_points;type:varchar(32) not null"`
+	UserID             string `json:"-"`
 	//	Parent          User   `json:"user;omitempty" gorm:"foreignKey:UserFk;refernces:ID"`
 }
 

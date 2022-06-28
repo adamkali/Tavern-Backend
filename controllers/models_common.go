@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"net/http"
 )
 
 var bank = "ABCDEF0123456789"
@@ -25,6 +24,3 @@ func generateUUID() string {
 	return uuid
 }
 
-func enable(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:19000")
-}

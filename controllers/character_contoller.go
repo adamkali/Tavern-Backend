@@ -27,7 +27,6 @@ func NewCharacterHandler(database gorm.DB) *characterHandler {
 === === === === === === === === === === === === === === === === === === === */
 
 func (h *characterHandler) Character(w http.ResponseWriter, r *http.Request) {
-	enable(&w)
 	switch r.Method {
 	case "GET":
 		h.getCharacterByID(w, r)
@@ -45,7 +44,6 @@ func (h *characterHandler) Character(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *characterHandler) Characters(w http.ResponseWriter, r *http.Request) {
-	enable(&w)
 	switch r.Method {
 	case "GET":
 		h.getCharactersByUserID(w, r)
