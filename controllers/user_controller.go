@@ -63,6 +63,22 @@ func (h *userHandler) Users(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *userHandler) Relationships(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		h.getRelationships(w, r)
+		return
+	case "POST":
+		h.postRelationships(w, r)
+		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed."))
+		return
+	}
+}
+
 /*
 === === === === === === === === === === === === === === === === === === ===
 		>=> USERS CONTROLLER ENDPOINTS `/api/users` <=<
@@ -334,4 +350,143 @@ func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 	response.OK(data, w)
 	return
+}
+
+
+//=== === === === === === === === === === === === === === === === === ===
+//	>=> USERRELATION CONTROLLER ENDPOINTS 
+//      `/api/users/user/:id` <=<
+//=== === === === === === === === === === === === === === === === === ===
+
+// GET /api/users/user/:id
+// get all relations for :id
+func (h *userHandler) getUserRelations(w http.ResponseWriter, r *http.Request) {
+	var response models.UserRelationshipsDetailedResponse
+	var data models.UserRelationships
+	var result models.UserRelationships
+
+	path := strings.Split(r.URL.String(), "/")
+	if len(path) != 5 {
+		response.UDRWrite(
+			w,
+			http.StatusNotFound,
+			"Insufficent Path",
+			false,
+		)
+		return
+	}
+
+	userId := string(path[4])
+	if len(userId) != 32 {
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid not long enough",
+			false,
+		)
+		return
+	}
+
+	other := string(path[4])
+	if len(other) != 32 {
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid not long enough",
+			false,
+		)
+		return
+	}
+
+	// get all relations for the userId
+	result := h.db.Where("self = ?", userId).Find(&data)
+
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if data.len() !>= 0 {
+		response.Data = models.UserRelationships{}
+		response.UDRWrite(
+			w,
+			http.StatusNotModified,
+			"User not found.",
+			false,
+		)
+		return
+	}
+
+	w.Header().Add("content-type", "application/json")
+	response.OK(data, w)
+	return
+}
+
+// POST /api/users/user/:id/relate/:other
+// create a new relation between :id and :other
+// this will create a new relation if one does not exist
+// there will be a post request to create a new relation
+// There will be two users in the body of the request.
+// The first user will be the user that is creating the relation
+// Its ID will be the :id and self in the UserRelationship
+// The second user will be the User that is being related to
+// Its ID will be the :other and Other in the UserRelationship
+func (h *userHandler) createUserRelations(w http.ResponseWriter, r *http.Request) {
+	var response models.UserRelationshipDetailedResponse
+	var data models.UserRelationship
+	jsonBytes, err := json.Unmarshal(r.Body)
+
+	if err != nil {
+		response.ConsumeError(
+			err,
+			w,
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	var self models.User
+	var other models.User
+	
+
+	path := strings.Split(r.URL.String(), "/")
+	if len(path) != 7 {
+		response.UDRWrite(
+			w,
+			http.StatusNotFound,
+			"Insufficent Path",
+			false,
+		)
+		return
+	}
+
+	userId := string(path[6])
+	otherId := string(path[4])
+	if len(userId) != 32 || len(otherId) != 32 {
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Guid not long enough for either one of the users.",
+			false,
+		)
+		return
+	}
+
+	// get all relations for the userId
+	result := h.db.Where("self = ?", userId).Find(&data)
+
+	if result.Error != nil {
+		response.ConsumeError(
+			result.Error,
+			w,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+
 }
