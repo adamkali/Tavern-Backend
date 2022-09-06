@@ -63,14 +63,29 @@ func (h *userHandler) Users(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *userHandler) Relationships(w http.ResponseWriter, r *http.Request) {
+// 	AuthToken Handler /api/auth
+func (h *userHandler) AuthToken(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
-	case "GET":
-		h.getRelationships(w, r)
-		return
 	case "POST":
-		h.postRelationships(w, r)
+		h.login(w, r)
+		return
+	case "DELETE":
+		h.deleteAuthToken(w, r)
+		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed."))
+		return
+	}
+}
+
+//    Verification Handler /api/signup
+func (h *userHandler) Verify(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "POST":
+		h.signup(w, r)
 		return
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -90,7 +105,7 @@ func (h *userHandler) Relationships(w http.ResponseWriter, r *http.Request) {
 func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
 	var prep []models.User
 	var users models.Users
-	
+
 	result := h.db.Preload("Characters").Preload("Plots").Find(&prep)
 
 	var response models.UsersDetailedResponse
@@ -352,141 +367,221 @@ func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// === === === === === === === === === === === ===
+//	>=> AUTHTOKEN/VERIFICATION CONTROLLER <=<
+//   	>=> `/api/auth/<path>` 		      <=<
+// === === === === === === === === === === === ===
 
-//=== === === === === === === === === === === === === === === === === ===
-//	>=> USERRELATION CONTROLLER ENDPOINTS 
-//      `/api/users/user/:id` <=<
-//=== === === === === === === === === === === === === === === === === ===
+// >=> POST /api/login
+// login with username and password
+func (h *userHandler) login(w http.ResponseWriter, r *http.Request) {
+	// get the username and password from the request
+	var response models.TokenDetailedResponse
+	var data models.AuthToken
+	var req models.AuthRequest
 
-// GET /api/users/user/:id
-// get all relations for :id
-func (h *userHandler) getUserRelations(w http.ResponseWriter, r *http.Request) {
-	var response models.UserRelationshipsDetailedResponse
-	var data models.UserRelationships
-	var result models.UserRelationships
-
-	path := strings.Split(r.URL.String(), "/")
-	if len(path) != 5 {
-		response.UDRWrite(
+	contentType := r.Header.Get("content-type")
+	if contentType != "application/json" {
+		response.TDRWrite(
 			w,
-			http.StatusNotFound,
-			"Insufficent Path",
+			http.StatusUnsupportedMediaType,
+			"Content Type needs to be application/json.",
 			false,
 		)
 		return
 	}
 
-	userId := string(path[4])
-	if len(userId) != 32 {
-		response.UDRWrite(
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+
+	err = json.Unmarshal(bodyBytes, &req)
+	if err != nil {
+		response.ConsumeError(
 			w,
-			http.StatusBadRequest,
-			"Guid not long enough",
+			err,
+		)
+		return
+	}
+
+	// get the username and password from the request
+	hash := data.GenAuth(req.Username, req.Password)
+
+	if hash == "" {
+		response.TDRWrite(
+			w,
+			http.StatusUnauthorized,
+			"Invalid username or password",
 			false,
 		)
 		return
 	}
 
-	other := string(path[4])
-	if len(other) != 32 {
-		response.UDRWrite(
-			w,
-			http.StatusBadRequest,
-			"Guid not long enough",
-			false,
-		)
-		return
-	}
-
-	// get all relations for the userId
-	result := h.db.Where("self = ?", userId).Find(&data)
-
+	// get check if the user exists in the AuthToken table to see
+	// that there is a userID associated with the hash
+	result := h.db.Where("hash = ?", hash).Find(&data)
 	if result.Error != nil {
 		response.ConsumeError(
+			w,
 			result.Error,
-			w,
-			http.StatusInternalServerError,
 		)
 		return
 	}
 
-	if data.len() !>= 0 {
-		response.Data = models.UserRelationships{}
-		response.UDRWrite(
-			w,
-			http.StatusNotModified,
-			"User not found.",
-			false,
-		)
-		return
-	}
-
-	w.Header().Add("content-type", "application/json")
-	response.OK(data, w)
+	// since there is a UserID associated with the hash in the AuthToken table, we can get the
+	// userId form result add it to data and write a TokenDetailedResonse to the client
+	response.OK(w, data)
 	return
 }
 
-// POST /api/users/user/:id/relate/:other
-// create a new relation between :id and :other
-// this will create a new relation if one does not exist
-// there will be a post request to create a new relation
-// There will be two users in the body of the request.
-// The first user will be the user that is creating the relation
-// Its ID will be the :id and self in the UserRelationship
-// The second user will be the User that is being related to
-// Its ID will be the :other and Other in the UserRelationship
-func (h *userHandler) createUserRelations(w http.ResponseWriter, r *http.Request) {
-	var response models.UserRelationshipDetailedResponse
-	var data models.UserRelationship
-	jsonBytes, err := json.Unmarshal(r.Body)
+// >=> DELETE /api/login
+// this will be deleting the credentials from the AuthToken table
+func (h *userHandler) deleteAuthToken(w http.ResponseWriter, r *http.Request) {
+	var response models.TokenDetailedResponse
+	var data models.AuthToken
+
+	// get the hash from the request
+	hash := r.Header.Get("Authorization")
+	if hash == "" {
+		response.TDRWrite(
+			w,
+			http.StatusUnauthorized,
+			"Invalid hash",
+			false,
+		)
+		return
+	}
+
+	// delete the hash from the AuthToken table
+	result := h.db.Delete(&models.AuthToken{}, hash)
+	if result.Error != nil {
+		response.ConsumeError(
+			w,
+			result.Error,
+		)
+		return
+	}
+
+	response.OK(w, data)
+	return
+}
+
+// >=> POST /api/signup
+// create a new user
+func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
+	var response models.TokenDetailedResponse
+	var data models.AuthToken
+	var req models.AuthRequest
+
+	contentType := r.Header.Get("content-type")
+	if contentType != "application/json" {
+		response.TDRWrite(
+			w,
+			http.StatusUnsupportedMediaType,
+			"Content Type needs to be application/json.",
+			false,
+		)
+		return
+	}
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+
+	err = json.Unmarshal(bodyBytes, &req)
+	if err != nil {
+		response.ConsumeError(
+			w,
+			err,
+		)
+		return
+	}
 
 	if err != nil {
 		response.ConsumeError(
+			w,
 			err,
-			w,
-			http.StatusBadRequest,
 		)
 		return
 	}
 
-	var self models.User
-	var other models.User
-	
+	// get the username and password from the request
+	username := req.Username
+	password := req.Password
 
-	path := strings.Split(r.URL.String(), "/")
-	if len(path) != 7 {
-		response.UDRWrite(
-			w,
-			http.StatusNotFound,
-			"Insufficent Path",
-			false,
-		)
-		return
-	}
-
-	userId := string(path[6])
-	otherId := string(path[4])
-	if len(userId) != 32 || len(otherId) != 32 {
-		response.UDRWrite(
-			w,
-			http.StatusBadRequest,
-			"Guid not long enough for either one of the users.",
-			false,
-		)
-		return
-	}
-
-	// get all relations for the userId
-	result := h.db.Where("self = ?", userId).Find(&data)
-
+	// check if the username is already taken
+	result := h.db.Where("username = ?", username).Find(&data)
 	if result.Error != nil {
 		response.ConsumeError(
-			result.Error,
 			w,
-			http.StatusInternalServerError,
+			result.Error,
 		)
 		return
 	}
 
+	//check that the username is not longer than 32 characters
+	if len(username) > 32 {
+		response.TDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Username is too long",
+			false,
+		)
+		return
+	}
 
+	// check that the result is empty (no user found) if it is not
+	// then the username is taken and throw and return a 409 Conflict
+	if result.RowsAffected != 0 {
+		response.TDRWrite(
+			w,
+			http.StatusConflict,
+			"Username already taken",
+			false,
+		)
+		return
+	}
+
+	// check that the password length is greater than 8,
+	// has a lowercase letter, an uppercase letter, a number and a special character
+	if !data.ValidatePassword(password) {
+		response.TDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one number and one special character",
+			false,
+		)
+		return
+	}
+
+	hash := data.GenAuth(username, password)
+
+	if hash == "" {
+		response.TDRWrite(
+			w,
+			http.StatusInternalServerError,
+			"Invalid username or password",
+			false,
+		)
+		return
+	}
+
+	// get check if the user exists in the AuthToken table to see
+	// that there is a userID associated with the hash
+	result = h.db.Where("hash = ?", hash).Find(&data)
+	if result.Error != nil {
+		response.ConsumeError(
+			w,
+			result.Error,
+		)
+		return
+	}
+
+	// TODO: Eventually add a verification email to the user
+	// or a verification code to the user to the user's phone number
+	// will be a 6 digit code that will be sent to the user's phone number
+	// or email address. The code will be valid for 5 minutes. If the user
+	// does not enter the code within 5 minutes, the code will be invalid.
+	// The user will have to request a new code. if the user does not enter
+
+	// since there is a UserID associated with the hash in the AuthToken table, we can get the
+	// userId form result add it to data and write a TokenDetailedResonse to the client
+	response.OK(w, data)
+	return
 }

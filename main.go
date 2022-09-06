@@ -4,6 +4,7 @@ import (
 	"Tavern-Backend/controllers"
 	"Tavern-Backend/models"
 	"net/http"
+
 	"github.com/rs/cors"
 
 	"gorm.io/driver/mysql"
@@ -20,7 +21,8 @@ func main() {
 	var user models.User
 	var plot models.Plot
 	var character models.Character
-	db.AutoMigrate(&user, &plot, &character)
+	var token models.AuthToken
+	db.AutoMigrate(&user, &plot, &character, &token)
 	userH := controllers.NewUserHandler(*db) //#2
 	characterH := controllers.NewCharacterHandler(*db)
 	plotH := controllers.NewPlotHandler(*db)
@@ -28,23 +30,23 @@ func main() {
 	// Create a cors middleware to allow cross-origin requests.
 	// have it return the handler function.
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   []string{
+		AllowedOrigins: []string{
 			"*",
 		},
 		AllowCredentials: true,
 		AllowedHeaders:   []string{"*"},
-		AllowedMethods:     []string{
-			http.MethodGet, 
-			http.MethodPost, 
-			http.MethodPut, 
-			http.MethodDelete, 
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
 			http.MethodOptions},
 	})
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Write([]byte("Hello, World!"))
-		return 
+		return
 	}))
 	http.Handle("/api/users", cors.Handler(http.HandlerFunc(userH.Users)))
 	http.Handle("/api/characters/userId/", cors.Handler(http.HandlerFunc(characterH.Characters)))

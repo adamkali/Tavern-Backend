@@ -1,8 +1,11 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type Plot struct {
@@ -52,6 +55,15 @@ type Group struct {
 	Name string `json:"group_name" gorm:"column:name;type:varchar(128) not null"`
 }
 
+type AuthToken struct {
+	ID        string `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
+	UserID    string `json:"user_id" gorm:"column:user_id;type:varchar(32) not null"`
+	User      User   `json:"user;omitempty" gorm:"foreignKey:UserID;refernces:ID"`
+	Username  string `json:"username" gorm:"column:username;type:varchar(32) not null"`
+	UserEmail string `json:"user_email" gorm:"column:email;type:varchar(128) not null"`
+	AuthHash  string `json:"auth_hash" gorm:"column:auth_hash;type:varchar(128) not null"`
+}
+
 type Users []User
 
 type UserDetailedResponse struct {
@@ -70,6 +82,131 @@ type GroupDetailedResponse struct {
 	Data       Group  `json:"group"`
 	Successful bool   `json:"successful"`
 	Message    string `json:"message"`
+}
+
+type TokenDetailedResponse struct {
+	Data       AuthToken `json:"data"`
+	Successful bool      `json:"successful"`
+	Message    string    `json:"message"`
+}
+
+type AuthRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func (t TokenDetailedResponse) TDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
+	t.Successful = successful
+	t.Message = message
+	jsonBytes, err := json.Marshal(t)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(code)
+	w.Write(jsonBytes)
+}
+
+func (t *TokenDetailedResponse) OK(w http.ResponseWriter, auth AuthToken) {
+	t.Data = auth
+	t.TDRWrite(w, http.StatusOK, "OK", true)
+}
+
+func (t *TokenDetailedResponse) ConsumeError(w http.ResponseWriter, err error) {
+	t.TDRWrite(w, http.StatusInternalServerError, err.Error(), false)
+}
+
+// Make a function to take a username, password, and userID
+// and then return a token
+// This function will use a hash function to create a hash
+// by using the username, password, and userID
+func (t *AuthToken) GenerateToken(username string, password string, userID string) {
+	// Create a hash function
+	hash := sha256.New()
+	// Write the username, password, and userID to the hash function
+	hash.Write([]byte(username))
+	hash.Write([]byte(password))
+	// Get the hash value
+	hashValue := hash.Sum(nil)
+	// Convert the hash value to a string
+	hashString := hex.EncodeToString(hashValue)
+	// Set the AuthToken struct values
+	t.Username = username
+	t.UserEmail = password
+	t.UserID = userID
+	t.AuthHash = hashString
+}
+
+func (t *AuthToken) VerifyToken(username string, password string) bool {
+	// Create a hash function
+	hash := sha256.New()
+	// Write the username, password, and userID to the hash function
+	hash.Write([]byte(username))
+	hash.Write([]byte(password))
+	// Get the hash value
+	hashValue := hash.Sum(nil)
+	// Convert the hash value to a string
+	hashString := hex.EncodeToString(hashValue)
+	// Compare the hashString to the AuthToken struct's AuthHash
+	if hashString == t.AuthHash {
+		return true
+	}
+	return false
+}
+
+func (t *AuthToken) GenAuth(username string, password string) string {
+	// Create a hash function
+	hash := sha256.New()
+	// Write the username, password, and to the hash function
+	hash.Write([]byte(username))
+	hash.Write([]byte(password))
+	// Get the hash value
+	hashValue := hash.Sum(nil)
+	// Convert the hash value to a string
+	hashString := hex.EncodeToString(hashValue)
+	return hashString
+}
+
+func (t *AuthToken) ValidatePassword(password string) bool {
+	// check that the password is valid by checking the following rules
+	// 1. Password must be at least 8 characters long
+	// 2. Password must contain at least one number
+	// 3. Password must contain at least one uppercase letter
+	// 4. Password must contain at least one lowercase letter
+	// 5. Password must contain at least one special character (!@#$%^&*()_+)
+	// 6. Password must not contain any spaces
+	// 7. Password must not contain any of the following characters: /'^(){}|:"<>?`~;[]\=-,
+	//     ( this is to sanitize the password for the database )
+
+	// Check that the password is at least 8 characters long
+	if len(password) < 8 {
+		return false
+	}
+	// Check that the password contains at least one number
+	if !strings.ContainsAny(password, "0123456789") {
+		return false
+	}
+	// Check that the password contains at least one uppercase letter
+	if !strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+		return false
+	}
+	// Check that the password contains at least one lowercase letter
+	if !strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz") {
+		return false
+	}
+	// Check that the password contains at least one special character (!@#$%^&*()_+)
+	if !strings.ContainsAny(password, "!@#$%^&*()_+") {
+		return false
+	}
+	// Check that the password does not contain any spaces
+	if strings.ContainsAny(password, " ") {
+		return false
+	}
+	// Check that the password does not contain any of the following characters: /'^(){}|:"<>?`~;[]\=-,
+	if strings.ContainsAny(password, "/'^(){}|:\"<>?`~;[]\\=-,") {
+		return false
+	}
+	return true
 }
 
 // UDRWrite(w http.ResponseWriter, code int, message string)
