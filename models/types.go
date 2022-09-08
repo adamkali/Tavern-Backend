@@ -4,8 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+
+	"gopkg.in/gomail.v2"
 )
 
 type Plot struct {
@@ -57,11 +62,18 @@ type Group struct {
 
 type AuthToken struct {
 	ID        string `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
-	UserID    string `json:"user_id" gorm:"column:user_id;type:varchar(32) not null"`
-	User      User   `json:"user;omitempty" gorm:"foreignKey:UserID;refernces:ID"`
+	UserID    string `json:"user_fk,omitempty" gorm:"foreignKey:UserID;refernces:ID"`
 	Username  string `json:"username" gorm:"column:username;type:varchar(32) not null"`
 	UserEmail string `json:"user_email" gorm:"column:email;type:varchar(128) not null"`
 	AuthHash  string `json:"auth_hash" gorm:"column:auth_hash;type:varchar(128) not null"`
+	Active    bool   `json:"active" gorm:"column:active;type:tinyint(1) not null"`
+}
+
+type AuthTokenActivation struct {
+	ID        string `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
+	AuthID    string `json:"auth_fk,omitempty" gorm:"foreignKey:AuthID;refernces:ID"`
+	AuthPin   string `json:"auth_pin" gorm:"column:auth_pin;type:varchar(8) not null"`
+	AuthEmail string `json:"auth_email" gorm:"column:auth_email;type:varchar(128) not null"`
 }
 
 type Users []User
@@ -91,11 +103,57 @@ type TokenDetailedResponse struct {
 }
 
 type AuthRequest struct {
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	UserEmail string `json:"user_email"`
+}
+
+type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-func (t TokenDetailedResponse) TDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
+func (a AuthTokenActivation) SendRegistrationEmail() error {
+	msg := gomail.NewMessage()
+
+	// read a file from Tavern-Backend/lib/html/Registration.html
+	// and use it as the body of the email
+	// replace the placeholder text with the AuthPin
+
+	var err error = nil
+
+	f, err := filepath.Abs("..lib/html/Registration.html")
+	if err != nil {
+		return err
+	}
+	file, err := os.Open(f)
+	if err != nil {
+		return err
+	}
+	file_string, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	fl := string(file_string)
+	// replace the placeholder text with the AuthPin
+	// send the email
+	fl = strings.Replace(fl, "<<<code>>>", a.AuthPin, -1)
+
+	msg.SetHeader("From", "tavernregister@gmail.com")
+	msg.SetHeader("To", a.AuthEmail)
+	msg.SetHeader("Subject", "Tavern Registration")
+	msg.SetBody("text/html", fl)
+
+	n := gomail.NewDialer("smtp.gmail.com", 587, "tavernregister@gmail.com", "#s!60eNq-dD0kK8Z6-Gh9kVuoF")
+
+	if err = n.DialAndSend(msg); err != nil {
+		return err
+	}
+	return err
+}
+
+func (t TokenDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
 	t.Successful = successful
 	t.Message = message
 	jsonBytes, err := json.Marshal(t)
@@ -109,18 +167,18 @@ func (t TokenDetailedResponse) TDRWrite(w http.ResponseWriter, code int, message
 
 func (t *TokenDetailedResponse) OK(w http.ResponseWriter, auth AuthToken) {
 	t.Data = auth
-	t.TDRWrite(w, http.StatusOK, "OK", true)
+	t.UDRWrite(w, http.StatusOK, "OK", true)
 }
 
 func (t *TokenDetailedResponse) ConsumeError(w http.ResponseWriter, err error) {
-	t.TDRWrite(w, http.StatusInternalServerError, err.Error(), false)
+	t.UDRWrite(w, http.StatusInternalServerError, err.Error(), false)
 }
 
 // Make a function to take a username, password, and userID
 // and then return a token
 // This function will use a hash function to create a hash
 // by using the username, password, and userID
-func (t *AuthToken) GenerateToken(username string, password string, userID string) {
+func (t *AuthToken) GenerateToken(username string, password string) {
 	// Create a hash function
 	hash := sha256.New()
 	// Write the username, password, and userID to the hash function
@@ -133,7 +191,6 @@ func (t *AuthToken) GenerateToken(username string, password string, userID strin
 	// Set the AuthToken struct values
 	t.Username = username
 	t.UserEmail = password
-	t.UserID = userID
 	t.AuthHash = hashString
 }
 
@@ -148,10 +205,7 @@ func (t *AuthToken) VerifyToken(username string, password string) bool {
 	// Convert the hash value to a string
 	hashString := hex.EncodeToString(hashValue)
 	// Compare the hashString to the AuthToken struct's AuthHash
-	if hashString == t.AuthHash {
-		return true
-	}
-	return false
+	return hashString == t.AuthHash
 }
 
 func (t *AuthToken) GenAuth(username string, password string) string {

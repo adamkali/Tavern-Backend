@@ -23,6 +23,26 @@ func NewUserHandler(database gorm.DB) *userHandler {
 	}
 }
 
+// make a post enforcement function it should take
+// http.ResponseWriter, *http.Request, and a Generic T that can either be
+// a UserDetailedResponse or a UsersDetailedResponse or an AuthTokenDetailedResponse
+func (h *userHandler) methodEnforce(r *http.Request, m string) bool {
+	return r.Method == strings.ToUpper(m)
+}
+
+func (h *userHandler) hashEnfoce(r *http.Request) bool {
+	hash := r.Header.Get("AuthorizationHash")
+	userID := r.Header.Get("UserID")
+
+	var token models.AuthToken
+
+	hashResult := h.db.Where("auth_hash = ?", hash).First(&token)
+	if hashResult.Error != nil {
+		return false
+	}
+	return token.UserID == userID
+}
+
 /*
 === === === === === === === === === === === === === === === === === === ===
 		>=> USERS CONTROLLER PAGES <=<
@@ -68,7 +88,7 @@ func (h *userHandler) AuthToken(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		h.login(w, r)
+		h.Login(w, r)
 		return
 	case "DELETE":
 		h.deleteAuthToken(w, r)
@@ -85,7 +105,7 @@ func (h *userHandler) Verify(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		h.signup(w, r)
+		h.Signup(w, r)
 		return
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -374,15 +394,26 @@ func (h *userHandler) deleteUserByID(w http.ResponseWriter, r *http.Request) {
 
 // >=> POST /api/login
 // login with username and password
-func (h *userHandler) login(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// get the username and password from the request
 	var response models.TokenDetailedResponse
 	var data models.AuthToken
-	var req models.AuthRequest
+	var req models.LoginRequest
+
+	good := h.methodEnforce(r, "POST")
+	if !good {
+		response.UDRWrite(
+			w,
+			http.StatusMethodNotAllowed,
+			"Method not allowed",
+			false,
+		)
+		return
+	}
 
 	contentType := r.Header.Get("content-type")
 	if contentType != "application/json" {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusUnsupportedMediaType,
 			"Content Type needs to be application/json.",
@@ -392,6 +423,13 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.ConsumeError(
+			w,
+			err,
+		)
+		return
+	}
 
 	err = json.Unmarshal(bodyBytes, &req)
 	if err != nil {
@@ -406,7 +444,7 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request) {
 	hash := data.GenAuth(req.Username, req.Password)
 
 	if hash == "" {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusUnauthorized,
 			"Invalid username or password",
@@ -417,7 +455,7 @@ func (h *userHandler) login(w http.ResponseWriter, r *http.Request) {
 
 	// get check if the user exists in the AuthToken table to see
 	// that there is a userID associated with the hash
-	result := h.db.Where("hash = ?", hash).Find(&data)
+	result := h.db.Where("auth_hash = ?", hash).Find(&data)
 	if result.Error != nil {
 		response.ConsumeError(
 			w,
@@ -441,7 +479,7 @@ func (h *userHandler) deleteAuthToken(w http.ResponseWriter, r *http.Request) {
 	// get the hash from the request
 	hash := r.Header.Get("Authorization")
 	if hash == "" {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusUnauthorized,
 			"Invalid hash",
@@ -466,14 +504,25 @@ func (h *userHandler) deleteAuthToken(w http.ResponseWriter, r *http.Request) {
 
 // >=> POST /api/signup
 // create a new user
-func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
+func (h *userHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	var response models.TokenDetailedResponse
 	var data models.AuthToken
 	var req models.AuthRequest
 
+	good := h.methodEnforce(r, "POST")
+	if !good {
+		response.UDRWrite(
+			w,
+			http.StatusMethodNotAllowed,
+			"Method not allowed",
+			false,
+		)
+		return
+	}
+
 	contentType := r.Header.Get("content-type")
 	if contentType != "application/json" {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusUnsupportedMediaType,
 			"Content Type needs to be application/json.",
@@ -483,6 +532,13 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.ConsumeError(
+			w,
+			err,
+		)
+		return
+	}
 
 	err = json.Unmarshal(bodyBytes, &req)
 	if err != nil {
@@ -504,6 +560,7 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 	// get the username and password from the request
 	username := req.Username
 	password := req.Password
+	useremail := req.UserEmail
 
 	// check if the username is already taken
 	result := h.db.Where("username = ?", username).Find(&data)
@@ -517,7 +574,7 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 
 	//check that the username is not longer than 32 characters
 	if len(username) > 32 {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusBadRequest,
 			"Username is too long",
@@ -529,7 +586,7 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 	// check that the result is empty (no user found) if it is not
 	// then the username is taken and throw and return a 409 Conflict
 	if result.RowsAffected != 0 {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusConflict,
 			"Username already taken",
@@ -541,10 +598,10 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 	// check that the password length is greater than 8,
 	// has a lowercase letter, an uppercase letter, a number and a special character
 	if !data.ValidatePassword(password) {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusBadRequest,
-			"Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one number and one special character",
+			"Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one number and one special character (!@#$%^&*()_+-=)",
 			false,
 		)
 		return
@@ -553,7 +610,7 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 	hash := data.GenAuth(username, password)
 
 	if hash == "" {
-		response.TDRWrite(
+		response.UDRWrite(
 			w,
 			http.StatusInternalServerError,
 			"Invalid username or password",
@@ -564,7 +621,7 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 
 	// get check if the user exists in the AuthToken table to see
 	// that there is a userID associated with the hash
-	result = h.db.Where("hash = ?", hash).Find(&data)
+	result = h.db.Where("auth_hash = ?", hash).Find(&data)
 	if result.Error != nil {
 		response.ConsumeError(
 			w,
@@ -573,15 +630,62 @@ func (h *userHandler) signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Eventually add a verification email to the user
-	// or a verification code to the user to the user's phone number
-	// will be a 6 digit code that will be sent to the user's phone number
-	// or email address. The code will be valid for 5 minutes. If the user
-	// does not enter the code within 5 minutes, the code will be invalid.
-	// The user will have to request a new code. if the user does not enter
+	if result.RowsAffected != 0 && data.Username == username {
+		// since there is a UserID associated with the hash in the AuthToken table
+		// return a 409 Conflict
+		response.UDRWrite(
+			w,
+			http.StatusConflict,
+			"Username already taken",
+			false,
+		)
+		return
 
-	// since there is a UserID associated with the hash in the AuthToken table, we can get the
-	// userId form result add it to data and write a TokenDetailedResonse to the client
-	response.OK(w, data)
-	return
+	} else {
+		// create a new user and make a new AuthToken for the user
+		// Make a new user
+		userId := generateUUID()
+		user := models.User{
+			Username:        username,
+			ID:              userId,
+			Bio:             "",
+			Tags:            "",
+			PlayerPrefrence: "",
+			Plots:           nil,
+			Characters:      nil,
+			GroupID:         generateUUID(),
+		}
+		userResult := h.db.Create(&user)
+		if userResult.Error != nil {
+			response.ConsumeError(
+				w,
+				userResult.Error,
+			)
+			return
+		}
+
+		// save the new user to the database
+		data = models.AuthToken{
+			Username:  username,
+			AuthHash:  hash,
+			UserID:    userId,
+			UserEmail: useremail,
+			ID:        generateUUID(),
+		}
+
+		// print data to the console
+		result = h.db.Create(&data) // this will create a new user and a new hash
+		if result.Error != nil {
+			response.ConsumeError(
+				w,
+				result.Error,
+			)
+			return
+		}
+
+		// since there is a UserID associated with the hash in the AuthToken table, we can get the
+		// userId form result add it to data and write a TokenDetailedResonse to the client
+		response.OK(w, data)
+		return
+	}
 }
