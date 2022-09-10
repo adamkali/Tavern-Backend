@@ -27,6 +27,12 @@ type Configuration struct {
 		AllowedHeaders []string `yaml:"headers"`
 		Credentials    bool     `yaml:"credentials"`
 	} `yaml:"cors"`
+	Email struct {
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+	} `yaml:"email"`
 }
 
 func LoadConfiguration(local bool) Configuration {

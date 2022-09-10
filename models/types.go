@@ -1,6 +1,7 @@
 package models
 
 import (
+	"Tavern-Backend/lib"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -35,7 +36,6 @@ type Character struct {
 	CharacterClass     string `json:"character_class" grom:"column:character_class;type:varchar(64) not null"`
 	CharacterLevel     int    `json:"character_level" gorm:"column:character_level;type: tinyint not null"`
 	CharacterTraits    string `json:"character_traits" grom:"column:character_traits;type:text not null"`
-	CharacterRace      string `json:"character_race" gorm:"column:character_race;type:varchar(32) not null`
 	CharacterHitPoints string `json:"character_hit_points" gorm:"column:character_hit_points;type:varchar(32) not null"`
 	UserID             string `json:"-"`
 	//	Parent          User   `json:"user;omitempty" gorm:"foreignKey:UserFk;refernces:ID"`
@@ -113,7 +113,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (a AuthTokenActivation) SendRegistrationEmail() error {
+func (a AuthTokenActivation) SendRegistrationEmail(config lib.Configuration) error {
 	msg := gomail.NewMessage()
 
 	// read a file from Tavern-Backend/lib/html/Registration.html
@@ -122,7 +122,7 @@ func (a AuthTokenActivation) SendRegistrationEmail() error {
 
 	var err error = nil
 
-	f, err := filepath.Abs("..lib/html/Registration.html")
+	f, err := filepath.Abs("lib\\html\\Register.html")
 	if err != nil {
 		return err
 	}
@@ -140,16 +140,16 @@ func (a AuthTokenActivation) SendRegistrationEmail() error {
 	// send the email
 	fl = strings.Replace(fl, "<<<code>>>", a.AuthPin, -1)
 
-	msg.SetHeader("From", "tavernregister@gmail.com")
+	msg.SetHeader("From", config.Email.Username)
 	msg.SetHeader("To", a.AuthEmail)
 	msg.SetHeader("Subject", "Tavern Registration")
 	msg.SetBody("text/html", fl)
 
-	n := gomail.NewDialer("smtp.gmail.com", 587, "tavernregister@gmail.com", "#s!60eNq-dD0kK8Z6-Gh9kVuoF")
-
-	if err = n.DialAndSend(msg); err != nil {
+	d := gomail.NewDialer(config.Email.Host, config.Email.Port, config.Email.Username, config.Email.Password)
+	if err := d.DialAndSend(msg); err != nil {
 		return err
 	}
+
 	return err
 }
 

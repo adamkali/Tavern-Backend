@@ -14,7 +14,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// Make the server proper.
+// @title Tavern Profile API
+// @version 1.0
+// @description This is the API for the Tavern Profile Application.
+
+// @License MIT
+
+// @host localhost:8000
+// @BasePath /api
 func main() {
 
 	// Get the arguments from the command line.
@@ -41,8 +48,19 @@ func main() {
 	var plot models.Plot
 	var character models.Character
 	var token models.AuthToken
-	db.AutoMigrate(&user, &plot, &character, &token)
-	userH := controllers.NewUserHandler(*db) //#2
+	var authTA models.AuthTokenActivation
+	var tags models.Tags
+	var pref models.PlayerPrefrence
+	db.AutoMigrate(
+		&user,
+		&plot,
+		&character,
+		&token,
+		&authTA,
+		&tags,
+		&pref,
+	)
+	userH := controllers.NewUserHandler(*db, config) //#2
 	characterH := controllers.NewCharacterHandler(*db)
 	plotH := controllers.NewPlotHandler(*db)
 
@@ -61,6 +79,7 @@ func main() {
 		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Write([]byte("Hello, World!"))
 	}))
+	http.Handle("/api/activate/", http.HandlerFunc(userH.Activate))
 	http.Handle("/api/signup", cors.Handler(http.HandlerFunc(userH.Signup)))
 	http.Handle("/api/login", cors.Handler(http.HandlerFunc(userH.Login)))
 	http.Handle("/api/users", cors.Handler(http.HandlerFunc(userH.Users)))
