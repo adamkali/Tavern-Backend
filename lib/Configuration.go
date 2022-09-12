@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -57,8 +56,6 @@ func LoadConfiguration(local bool) Configuration {
 	var config Configuration
 
 	if local {
-		//Print local
-		fmt.Print("Loading Local Configuration\n")
 		// get .local.config from the /env folder
 		// check the operating system and load the correct file.
 		yamlfile, err := os.Open(locPath)
@@ -74,7 +71,6 @@ func LoadConfiguration(local bool) Configuration {
 			println(err.Error())
 			panic(err)
 		}
-		fmt.Print(config)
 	} else {
 		yamlfile, err := os.Open(prodPath)
 		if err != nil {

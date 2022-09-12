@@ -29,7 +29,6 @@ func main() {
 	// else pass false.
 
 	var config lib.Configuration
-	println(os.Args[1])
 	if os.Args[1] == "dev" {
 		config = lib.LoadConfiguration(true)
 	} else if len(os.Args) == 1 {
@@ -66,19 +65,21 @@ func main() {
 
 	// Create a cors middleware to allow cross-origin requests.
 	// have it return the handler function.
-	fmt.Print("Starting Cors Config\n")
 	cors := cors.New(cors.Options{
 		AllowedOrigins:   config.Cors.AllowedOrigins,
 		AllowCredentials: config.Cors.Credentials,
 		AllowedHeaders:   config.Cors.AllowedHeaders,
 		AllowedMethods:   config.Cors.AllowedMethods,
 	})
-	fmt.Print("Starting Server\n")
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Write([]byte("Hello, World!"))
 	}))
+	http.Handle("/api/auth/enums/tags", http.HandlerFunc(userH.GetAuthTags))
+	http.Handle("/api/auth/enums/preferences", http.HandlerFunc(userH.GetAuthPreferences))
+	http.Handle("/api/auth/users/", http.HandlerFunc(userH.AuthUpdateUserByID))
+	http.Handle("/api/auth/user/", http.HandlerFunc(userH.GetAuthUserByID))
 	http.Handle("/api/activate/", http.HandlerFunc(userH.Activate))
 	http.Handle("/api/signup", cors.Handler(http.HandlerFunc(userH.Signup)))
 	http.Handle("/api/login", cors.Handler(http.HandlerFunc(userH.Login)))

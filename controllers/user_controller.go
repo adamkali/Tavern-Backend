@@ -994,7 +994,7 @@ func (h *userHandler) Activate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// update the auth token to be active
-	result = h.db.Model(&data).Update("active", true)
+	result = h.db.Model(&data).Where("id = ?", data.ID).Update("active", true)
 	if result.Error != nil {
 		response.ConsumeError(
 			w,
@@ -1003,7 +1003,7 @@ func (h *userHandler) Activate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// delete the AuthTokenActivation
-	result = h.db.Delete(&active)
+	result = h.db.Where("id = ?", active.ID).Delete(&active)
 	if result.Error != nil {
 		response.ConsumeError(
 			w,

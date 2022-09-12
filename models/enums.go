@@ -7,7 +7,7 @@ import (
 
 type Tags struct {
 	ID      string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
-	TagID   int    `json:"tag_id" gorm:"column:tag_id;type:smallint(30000);not null"`
+	TagID   int    `json:"tag_id" gorm:"column:tag_id;type:smallint(255);not null"`
 	TagName string `json:"tag_name" gorm:"column:tag_name;varchar(32) not null"`
 }
 
@@ -40,7 +40,7 @@ func (t *TagsDetailedResponse) ConsumeError(w http.ResponseWriter, err error) {
 
 type PlayerPrefrence struct {
 	ID           string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
-	PreferenceID int    `json:"pref_id" gorm:"column:pref_id;type:smallint(30000);not null"`
+	PreferenceID int    `json:"pref_id" gorm:"column:pref_id;type:smallint(255);not null"`
 	Preference   string `json:"pref_name" gorm:"column:pref_name;varchar(32) not null"`
 }
 
