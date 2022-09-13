@@ -1,0 +1,8 @@
+# do not enclude env directory
+# do not include .git directory
+*.exe
+**/env
+**/.git
+
+
+

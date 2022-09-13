@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tavern Profile Log</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        body {
+            background-color: #daeef1;
+            color: #463f4e;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+        }
+        tr:nth-child(even) {
+            background-color: #c1aece;
+        }
+        th {
+            background-color: #daeef1;
+            color: #463f4e;
+            
+        }
+        .log-success {
+            background-color: #075c07;
+            color: #b3e4a9;
+
+            font-weight: bold;
+        }
+        .log-failure {
+            background-color: #a39800;
+            color: #eef5b3;
+
+            font-weight: bold;
+        }
+        .log-error {
+            background-color: #a30000;
+            color: #f5b3b3;
+
+            font-weight: bold;
+        }
+        .method {
+            font-weight: bolder;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tavern Profile Log</h1>
+    <!-- make a table that has the ability to log data from a server that is a template for go -->
+    <!-- This table should have a couple of values -->
+    <!-- 1. The Date-Time of the log -->
+    <!-- 2. Method of the request -->
+    <!-- 3. URI of the request -->
+    <!-- 4. Status of the request -->
+    <!-- 5. Time Taken in milliseconds -->
+    <!-- 6. Size of the response in bytes -->
+    
+    <table>
+        <tr>
+            <th></th>
+            <th>Date-Time</th>
+            <th>Method</th>
+            <th>URI (host/api/)</th>
+            <th>Status</th>
+            <th>Time Taken (ms)</th>
+            <th>Size (kB)</th>
+            <th>Reason</th>
+        </tr>
+        {{range .Entries}}
+            <tr>
+                <td class="log-{{.Message}}">{{.Message}}</td>
+                <td>{{.DateTime}}</td>
+                <td class="method">{{.Method}}</td>
+                <td>{{.URI}}</td>
+                <td>{{.StatusCode}}</td>
+                <td>{{.TimeTaken}}</td>
+                <td>{{.Size}}</td>
+                <td>{{.Reason}}</td>
+            </tr>
+        {{end}}
+    </table>
+
+</body>
+</html>

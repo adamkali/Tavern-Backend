@@ -31,7 +31,7 @@ func main() {
 	var config lib.Configuration
 	if os.Args[1] == "dev" {
 		config = lib.LoadConfiguration(true)
-	} else if len(os.Args) == 1 {
+	} else if os.Args[1] == "prod" {
 		config = lib.LoadConfiguration(false)
 	} else {
 		panic("Invalid Argument")
@@ -71,16 +71,17 @@ func main() {
 		AllowedHeaders:   config.Cors.AllowedHeaders,
 		AllowedMethods:   config.Cors.AllowedMethods,
 	})
+
+	entries := lib.LogEntries{}
+	entries.StartLogging()
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Write([]byte("Hello, World!"))
+
 	}))
-	http.Handle("/api/auth/enums/tags", http.HandlerFunc(userH.GetAuthTags))
-	http.Handle("/api/auth/enums/preferences", http.HandlerFunc(userH.GetAuthPreferences))
-	http.Handle("/api/auth/users/", http.HandlerFunc(userH.AuthUpdateUserByID))
-	http.Handle("/api/auth/user/", http.HandlerFunc(userH.GetAuthUserByID))
-	http.Handle("/api/activate/", http.HandlerFunc(userH.Activate))
+	http.Handle("/api/auth/enums/tags", cors.Handler(http.HandlerFunc(userH.GetAuthTags)))
+	http.Handle("/api/auth/enums/preferences", cors.Handler(http.HandlerFunc(userH.GetAuthPreferences)))
+	http.Handle("/api/auth/users/", cors.Handler(http.HandlerFunc(userH.AuthUpdateUserByID)))
+	http.Handle("/api/auth/user/", cors.Handler(http.HandlerFunc(userH.GetAuthUserByID)))
+	http.Handle("/api/activate/", cors.Handler(http.HandlerFunc(userH.Activate)))
 	http.Handle("/api/signup", cors.Handler(http.HandlerFunc(userH.Signup)))
 	http.Handle("/api/login", cors.Handler(http.HandlerFunc(userH.Login)))
 	http.Handle("/api/users", cors.Handler(http.HandlerFunc(userH.Users)))
@@ -90,4 +91,13 @@ func main() {
 	http.Handle("/api/plots/", cors.Handler(http.HandlerFunc(plotH.Plot)))
 	http.Handle("/api/users/", cors.Handler(http.HandlerFunc(userH.User)))
 	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
+}
+
+// make an http.Handler that will hold the request and return a http.HandlerFunc
+// that will handle the request.
+func LogWrapper(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL.Path)
+		handler.ServeHTTP(w, r)
+	})
 }

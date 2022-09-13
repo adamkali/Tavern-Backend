@@ -4,9 +4,7 @@ import (
 	"Tavern-Backend/lib"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,30 +76,6 @@ type AuthTokenActivation struct {
 
 type Users []User
 
-type UserDetailedResponse struct {
-	Data       User   `json:"data"`
-	Successful bool   `json:"successful"`
-	Message    string `json:"message"`
-}
-
-type UsersDetailedResponse struct {
-	Data       Users  `json:"data"`
-	Successful bool   `json:"successful"`
-	Message    string `json:"message"`
-}
-
-type GroupDetailedResponse struct {
-	Data       Group  `json:"group"`
-	Successful bool   `json:"successful"`
-	Message    string `json:"message"`
-}
-
-type TokenDetailedResponse struct {
-	Data       AuthToken `json:"data"`
-	Successful bool      `json:"successful"`
-	Message    string    `json:"message"`
-}
-
 type AuthRequest struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
@@ -151,27 +125,6 @@ func (a AuthTokenActivation) SendRegistrationEmail(config lib.Configuration) err
 	}
 
 	return err
-}
-
-func (t TokenDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
-	t.Successful = successful
-	t.Message = message
-	jsonBytes, err := json.Marshal(t)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-func (t *TokenDetailedResponse) OK(w http.ResponseWriter, auth AuthToken) {
-	t.Data = auth
-	t.UDRWrite(w, http.StatusOK, "OK", true)
-}
-
-func (t *TokenDetailedResponse) ConsumeError(w http.ResponseWriter, err error) {
-	t.UDRWrite(w, http.StatusInternalServerError, err.Error(), false)
 }
 
 // Make a function to take a username, password, and userID
@@ -261,191 +214,4 @@ func (t *AuthToken) ValidatePassword(password string) bool {
 		return false
 	}
 	return true
-}
-
-// UDRWrite(w http.ResponseWriter, code int, message string)
-//
-// This is a method to diplay any text in detailed responses
-// To the http.ResponseWriter. It will dump the message into
-// The json displayed the client
-
-func (u UserDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
-	u.Successful = successful
-	u.Message = message
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// UDRWrite(w http.ResponseWriter, code int, message string)
-//
-// This is a method to diplay any text in detailed responses
-// To the http.ResponseWriter. It will dump the message into
-// The json displayed the client
-func (u UsersDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
-	u.Successful = successful
-	u.Message = message
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// UDRWrite(w http.ResponseWriter, code int, message string)
-//
-// This is a method to diplay any text in detailed responses
-// To the http.ResponseWriter. It will dump the message into
-// The json displayed the client
-func (u GroupDetailedResponse) UDRWrite(w http.ResponseWriter, code int, message string, successful bool) {
-	u.Successful = successful
-	u.Message = message
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// ConumeError(err error, w http.ResponseWriter, code int)
-//
-// An error cosumer made to make the server requests as client
-// friendly as possible.
-//
-// params:
-// 	err Error -> This is any error that can be produced by go
-//	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-//	code int -> This is designed to contian http.StatusOK or
-//		any of the http statuses.
-func (u UserDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
-	u.Message = err.Error()
-	u.Successful = false
-	u.Data = User{}
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// OK(user User, w http.ResponseWriter)
-//
-// A friendly status Ok writter to the web console to write the data
-// set that the request was successful, and set the that the function
-// is ready to be returned.
-//
-// params:
-// 	user User -> This is the main data that we want to send back
-//		to who ever is requesting the data.
-// 	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-func (u UserDetailedResponse) OK(user User, w http.ResponseWriter) {
-	u.Message = "OK"
-	u.Successful = true
-	u.Data = user
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonBytes)
-}
-
-// ConumeError(err error, w http.ResponseWriter, code int)
-//
-// An error cosumer made to make the server requests as client
-// friendly as possible.
-//
-// params:
-// 	err Error -> This is any error that can be produced by go
-//	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-//	code int -> This is designed to contian http.StatusOK or
-//		any of the http statuses.
-func (u UsersDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
-	u.Message = err.Error()
-	u.Successful = false
-	u.Data = nil
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// OK(user User, w http.ResponseWriter)
-//
-// A friendly status Ok writter to the web console to write the data
-// set that the request was successful, and set the that the function
-// is ready to be returned.
-//
-// params:
-// 	user Users -> This is the main data that we want to send back
-//		to who ever is requesting the data.
-// 	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-func (u UsersDetailedResponse) OK(user Users, w http.ResponseWriter) {
-	u.Message = "OK"
-	u.Successful = true
-	u.Data = user
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonBytes)
-}
-
-// ConumeError(err error, w http.ResponseWriter, code int)
-//
-// An error cosumer made to make the server requests as client
-// friendly as possible.
-//
-// params:
-// 	err Error -> This is any error that can be produced by go
-//	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-//	code int -> This is designed to contian http.StatusOK or
-//		any of the http statuses.
-func (u GroupDetailedResponse) ConsumeError(err error, w http.ResponseWriter, code int) {
-	u.Message = err.Error()
-	u.Successful = false
-	u.Data = Group{}
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(code)
-	w.Write(jsonBytes)
-}
-
-// OK(user Group, w http.ResponseWriter)
-//
-// A friendly status Ok writter to the web console to write the data
-// set that the request was successful, and set the that the function
-// is ready to be returned.
-//
-// params:
-// 	user Group -> This is the main data that we want to send back
-//		to who ever is requesting the data.
-// 	w http.ResponseWriter -> The writer incharge of outputting
-//		to the web console that gets responses.
-func (u GroupDetailedResponse) OK(user Group, w http.ResponseWriter) {
-	u.Message = "OK"
-	u.Successful = true
-	u.Data = user
-	jsonBytes, err := json.Marshal(u)
-	if err != nil {
-		panic(err.Error())
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonBytes)
 }

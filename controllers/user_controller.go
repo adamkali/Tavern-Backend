@@ -3,11 +3,14 @@ package controllers
 import (
 	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -113,12 +116,17 @@ func (h *userHandler) Verify(w http.ResponseWriter, r *http.Request) {
 // Create a getter from the userHandler #2
 // 	>=> GET /api/users
 func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
+
 	var prep []models.User
 	var users models.Users
 
 	result := h.db.Preload("Characters").Preload("Plots").Find(&prep)
 
-	var response models.UsersDetailedResponse
+	// var response models.UsersDetailedResponse
+	var response models.DetailedResponse[models.Users]
 
 	if result.Error != nil {
 		response.ConsumeError(
@@ -126,6 +134,8 @@ func (h *userHandler) get(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = time.Since(startTime).Milliseconds()
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error())
 		return
 	}
 
@@ -1024,6 +1034,10 @@ func (h *userHandler) Activate(w http.ResponseWriter, r *http.Request) {
 // GET /api/auth/enum/tags
 // 
 func (h *userHandler) GetAuthTags(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
+
 	var response models.TagsDetailedResponse
 	var data []models.Tags
 	var token models.AuthToken
@@ -1037,6 +1051,8 @@ func (h *userHandler) GetAuthTags(w http.ResponseWriter, r *http.Request) {
 			"Method not allowed",
 			false,
 		)
+		logger.TimeTaken = time.Since(startTime).Milliseconds()
+		logger.Log(r, http.StatusMethodNotAllowed, 0, "Method not allowed")
 		return
 	}
 	// get the token from the request
@@ -1049,6 +1065,8 @@ func (h *userHandler) GetAuthTags(w http.ResponseWriter, r *http.Request) {
 			"Authorization header not found",
 			false,
 		)
+		logger.TimeTaken = time.Since(startTime).Milliseconds()
+		logger.Log(r, http.StatusUnauthorized, 0, "Authorization header not found")
 		return
 	}
 	result := h.db.Where("auth_hash = ?", auth_hash).Find(&token)
@@ -1059,6 +1077,8 @@ func (h *userHandler) GetAuthTags(w http.ResponseWriter, r *http.Request) {
 			"Unauthorized",
 			false,
 		)
+		logger.TimeTaken = time.Since(startTime).Milliseconds()
+		logger.Log(r, http.StatusUnauthorized, 0, "Unauthorized", result.Error)
 		return
 	}
 
@@ -1069,17 +1089,28 @@ func (h *userHandler) GetAuthTags(w http.ResponseWriter, r *http.Request) {
 			w,
 			result.Error,
 		)
+		logger.TimeTaken = time.Since(startTime).Milliseconds()
+		logger.Log(r, http.StatusInternalServerError, 0, "Internal Server Error", result.Error)
 		return
 	}
 
 	// write the tags to the client
 	response.OK(w, data)
+	logger.TimeTaken = time.Since(startTime).Milliseconds()
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(data)
+	logger.Log(r, http.StatusOK, float64(network.Len()/1000), "OK")
 	return
 }
 
 // GET /api/auth/enum/preferences
 // 
 func (h *userHandler) GetAuthPreferences(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	time := time.Now()
+
 	var response models.PlayerPrefrenceDetailedResponse
 	var data []models.PlayerPrefrence
 	var token models.AuthToken
@@ -1093,6 +1124,8 @@ func (h *userHandler) GetAuthPreferences(w http.ResponseWriter, r *http.Request)
 			"Method not allowed",
 			false,
 		)
+		logger.TimeTaken = int(time.Since(time).Milliseconds())
+		logger.Log(r, http.StatusMethodNotAllowed, 0, "Method not allowed")
 		return
 	}
 	// get the token from the request
@@ -1105,6 +1138,8 @@ func (h *userHandler) GetAuthPreferences(w http.ResponseWriter, r *http.Request)
 			"Authorization header not found",
 			false,
 		)
+		logger.TimeTaken = int(time.Since(time).Milliseconds())
+		logger.Log(r, http.StatusUnauthorized, 0, "Authorization header not found")
 		return
 	}
 	// check if the token is in the AuthToken table
@@ -1116,6 +1151,8 @@ func (h *userHandler) GetAuthPreferences(w http.ResponseWriter, r *http.Request)
 			"Unauthorized",
 			false,
 		)
+		logger.TimeTaken = int(time.Since(time).Milliseconds())
+		logger.Log(r, http.StatusUnauthorized, 0, "Unauthorized", result.Error)
 		return
 	}
 
@@ -1126,10 +1163,17 @@ func (h *userHandler) GetAuthPreferences(w http.ResponseWriter, r *http.Request)
 			w,
 			result.Error,
 		)
+		logger.TimeTaken = int(time.Since(time).Milliseconds())
+		logger.Log(r, http.StatusInternalServerError, 0, "Internal Server Error", result.Error)
 		return
 	}
 
 	// write the preferences to the client
 	response.OK(w, data)
+	logger.TimeTaken = int(time.Since(time).Milliseconds())
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(data)
+	logger.Log(r, http.StatusOK, float64(network.Len()/1000), "OK")
 	return
 }

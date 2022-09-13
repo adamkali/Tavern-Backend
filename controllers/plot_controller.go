@@ -1,12 +1,16 @@
 package controllers
 
 import (
+	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -61,6 +65,10 @@ func (h *plotHandler) Plots(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
+
 	var response models.PlotDetailedResponse
 	var data models.Plot
 
@@ -72,6 +80,8 @@ func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
 			"Insufficent path...",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent path...")
 		return
 	}
 
@@ -83,6 +93,8 @@ func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
 			"Guid length not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid length not long enough")
 		return
 	}
 
@@ -95,6 +107,8 @@ func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
@@ -106,15 +120,25 @@ func (h *plotHandler) getPlotByID(w http.ResponseWriter, r *http.Request) {
 			"Plot not found.",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotModified, 0, "Plot not found.")
 		return
 	}
 
 	w.Header().Add("content-type", "application/json")
 	response.OK(data, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(data)
+	logger.Log(r, http.StatusOK, float64(network.Len()/1000), "Plot found.")
 	return
 }
 
 func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.PlotDetailedResponse
 
@@ -126,6 +150,8 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -137,6 +163,8 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -148,6 +176,8 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			"Content Type needs to be application/json.",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusUnsupportedMediaType, 0, "Content Type needs to be application/json.")
 		return
 	}
 
@@ -161,6 +191,8 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
 		return
 	}
 
@@ -172,6 +204,8 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 	plot.ID = plotId
@@ -183,14 +217,23 @@ func (h *plotHandler) updatePlotByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
 	response.OK(plot, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(plot)
 	return
 }
 
 func (h *plotHandler) deletePlotByID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.PlotDetailedResponse
 	var data models.Plot
@@ -203,6 +246,8 @@ func (h *plotHandler) deletePlotByID(w http.ResponseWriter, r *http.Request) {
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -214,6 +259,8 @@ func (h *plotHandler) deletePlotByID(w http.ResponseWriter, r *http.Request) {
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -225,6 +272,8 @@ func (h *plotHandler) deletePlotByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 	response.OK(data, w)
@@ -233,6 +282,9 @@ func (h *plotHandler) deletePlotByID(w http.ResponseWriter, r *http.Request) {
 
 // GET /api/plot/userId/{userId}
 func (h *plotHandler) getPlotsByUserID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.PlotsDetailedResponse
 
@@ -244,6 +296,8 @@ func (h *plotHandler) getPlotsByUserID(w http.ResponseWriter, r *http.Request) {
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -255,6 +309,8 @@ func (h *plotHandler) getPlotsByUserID(w http.ResponseWriter, r *http.Request) {
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -270,6 +326,8 @@ func (h *plotHandler) getPlotsByUserID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
@@ -280,17 +338,27 @@ func (h *plotHandler) getPlotsByUserID(w http.ResponseWriter, r *http.Request) {
 	_, err := json.Marshal(plots)
 	if err != nil {
 		response.ConsumeError(err, w, http.StatusInternalServerError)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, err.Error(), err)
 		return
 	}
 
 	// On success we can now write the response!
 	w.Header().Add("content-type", "application/json")
 	response.OK(plots, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(plots)
+	logger.Log(r, http.StatusOK, float64(network.Len()/1000), "Success")
 	return
 }
 
 // 	>=> POST /api/plots/userId/{userId}
 func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.PlotDetailedResponse
 
@@ -302,6 +370,8 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -313,6 +383,9 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
+
 		return
 	}
 
@@ -325,6 +398,8 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
 		return
 	}
 
@@ -336,6 +411,8 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("Application data is not application/json, got: {%s}", contentType),
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusUnsupportedMediaType, 0, fmt.Sprintf("Application data is not application/json, got: {%s}", contentType))
 		return
 	}
 
@@ -347,6 +424,8 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
 		return
 	}
 
@@ -360,9 +439,16 @@ func (h *plotHandler) postPlotByUserID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
 	response.OK(plot, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(plot)
+	logger.Log(r, http.StatusOK, float64(network.Len()/1000), "Success")
 	return
 }

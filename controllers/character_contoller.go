@@ -1,12 +1,16 @@
 package controllers
 
 import (
+	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -59,6 +63,9 @@ func (h *characterHandler) Characters(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Request) {
+	var logger lib.LogEntryObject
+	startTime := time.Now()
+
 	var response models.CharacterDetailedResponse
 	var data models.Character
 
@@ -70,6 +77,8 @@ func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Reque
 			"Insufficent path...",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent path...")
 		return
 	}
 
@@ -81,6 +90,8 @@ func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Reque
 			"Guid length not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid length not long enough")
 		return
 	}
 
@@ -92,6 +103,8 @@ func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Reque
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
@@ -103,15 +116,24 @@ func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Reque
 			"Character not found.",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotModified, 0, "Character not found.")
 		return
 	}
 
 	w.Header().Add("content-type", "application/json")
 	response.OK(data, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(data)
+	logger.Log(r, http.StatusOK, float64(len(network.Bytes()))/1000, "OK")
 	return
 }
 
 func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Request) {
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.CharacterDetailedResponse
 
@@ -123,6 +145,8 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -134,6 +158,8 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -145,10 +171,23 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			"Content Type needs to be application/json.",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusUnsupportedMediaType, 0, "Content Type needs to be application/json.")
 		return
 	}
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.UDRWrite(
+			w,
+			http.StatusBadRequest,
+			"Error reading body.",
+			false,
+		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Error reading body.")
+		return
+	}
 
 	var character models.Character
 	err = json.Unmarshal(bodyBytes, &character)
@@ -158,6 +197,8 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
 		return
 	}
 
@@ -169,6 +210,8 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 	character.ID = characterId
@@ -180,14 +223,23 @@ func (h *characterHandler) updateCharacterByID(w http.ResponseWriter, r *http.Re
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
 	response.OK(character, w)
-	return
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(character)
+	logger.Log(r, http.StatusOK, float64(len(network.Bytes()))/1000, "OK")
 }
 
 func (h *characterHandler) deleteCharacterByID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.CharacterDetailedResponse
 	var data models.Character
@@ -200,6 +252,8 @@ func (h *characterHandler) deleteCharacterByID(w http.ResponseWriter, r *http.Re
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -211,6 +265,8 @@ func (h *characterHandler) deleteCharacterByID(w http.ResponseWriter, r *http.Re
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -222,14 +278,24 @@ func (h *characterHandler) deleteCharacterByID(w http.ResponseWriter, r *http.Re
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 	response.OK(data, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(data)
+	logger.Log(r, http.StatusOK, float64(len(network.Bytes()))/1000, "OK")
 	return
 }
 
 // GET /api/character/userId/{userId}
 func (h *characterHandler) getCharactersByUserID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.CharactersDetailedResponse
 
@@ -241,6 +307,8 @@ func (h *characterHandler) getCharactersByUserID(w http.ResponseWriter, r *http.
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
 		return
 	}
 
@@ -252,6 +320,8 @@ func (h *characterHandler) getCharactersByUserID(w http.ResponseWriter, r *http.
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -267,6 +337,8 @@ func (h *characterHandler) getCharactersByUserID(w http.ResponseWriter, r *http.
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
@@ -277,17 +349,27 @@ func (h *characterHandler) getCharactersByUserID(w http.ResponseWriter, r *http.
 	_, err := json.Marshal(characters)
 	if err != nil {
 		response.ConsumeError(err, w, http.StatusInternalServerError)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, err.Error(), err)
 		return
 	}
 
 	// On success we can now write the response!
 	w.Header().Add("content-type", "application/json")
 	response.OK(characters, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(characters)
+	logger.Log(r, http.StatusOK, float64(len(network.Bytes()))/1000, "OK")
 	return
 }
 
 // 	>=> POST /api/characters/userId/{userId}
 func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.Request) {
+
+	var logger lib.LogEntryObject
+	startTime := time.Now()
 
 	var response models.CharacterDetailedResponse
 
@@ -299,6 +381,9 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			"Insufficent Path",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusNotFound, 0, "Insufficent Path")
+
 		return
 	}
 
@@ -310,6 +395,8 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			"Guid not long enough",
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, "Guid not long enough")
 		return
 	}
 
@@ -322,6 +409,8 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
 		return
 	}
 
@@ -333,6 +422,8 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			fmt.Sprintf("Application data is not application/json, got: {%s}", contentType),
 			false,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusUnsupportedMediaType, 0, fmt.Sprintf("Application data is not application/json, got: {%s}", contentType))
 		return
 	}
 
@@ -344,6 +435,9 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			w,
 			http.StatusBadRequest,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusBadRequest, 0, err.Error(), err)
+
 		return
 	}
 
@@ -357,9 +451,16 @@ func (h *characterHandler) postCharacterByUserID(w http.ResponseWriter, r *http.
 			w,
 			http.StatusInternalServerError,
 		)
+		logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+		logger.Log(r, http.StatusInternalServerError, 0, result.Error.Error(), result.Error)
 		return
 	}
 
 	response.OK(character, w)
+	logger.TimeTaken = int64(time.Since(startTime) * time.Millisecond)
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(character)
+	logger.Log(r, http.StatusOK, float64(len(network.Bytes()))/1000, "OK")
 	return
 }
