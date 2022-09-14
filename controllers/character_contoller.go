@@ -63,8 +63,7 @@ func (h *characterHandler) Characters(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *characterHandler) getCharacterByID(w http.ResponseWriter, r *http.Request) {
-	var logger lib.LogEntryObject
-	startTime := time.Now()
+	adminLog := lib.New(r)
 
 	var response models.CharacterDetailedResponse
 	var data models.Character

@@ -1,6 +1,8 @@
 package lib
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,6 +50,15 @@ const (
 	LogError   LogEntryEnum = 3000
 )
 
+func New(r *http.Request) LogEntryObject {
+	return LogEntryObject{
+		Method:    r.Method,
+		URI:       r.RequestURI,
+		DateTime:  time.Now().Format("RFC3339"),
+		TimeTaken: time.Now().UnixNano(),
+	}
+}
+
 func (ls LogEntries) StartLogging() {
 	// check the operating system and load the correct file.
 	var logpath string
@@ -70,6 +81,12 @@ func (ls LogEntries) StartLogging() {
 }
 
 func (ls LogEntries) RenderHtml(w http.ResponseWriter) {
+	// TODO: IMPLEMENT THIS IN THE /api/admin/log endpoint
+	// also TODO: make a groups i.e.
+	// 1. User
+	// 2. Premium
+	// 3. Admin
+
 	// check the operating system and load the correct file.
 	var logpath string
 	if runtime.GOOS == "windows" {
@@ -113,15 +130,17 @@ func (ls LogEntries) RenderHtml(w http.ResponseWriter) {
 }
 
 func (logEntry LogEntryObject) Log(
-	r *http.Request,
+	dr DetailedResponse[T],
 	statusCode int,
-	size float64,
 	reason string,
 	er ...error,
 ) {
 	ls := LogEntries{}
 
+	logEntry.TimeTaken = time.Since(logEntry.TimeTaken).Milliseconds()
+	logEntry.Size = logEntry.SizeOfData(dr)
 	logEntry.StatusCode = statusCode
+
 	if er != nil {
 		logEntry.Code = LogError
 		logEntry.Message = "error"
@@ -132,10 +151,7 @@ func (logEntry LogEntryObject) Log(
 		logEntry.Code = LogFailure
 		logEntry.Message = "failure"
 	}
-	logEntry.Size = size
-	logEntry.Method = r.Method
-	logEntry.URI = r.URL.Path[2:]
-	logEntry.DateTime = time.Now().Format("RFC3339")
+
 	// log to file
 	var logpath string
 	if runtime.GOOS == "windows" {
@@ -154,6 +170,7 @@ func (logEntry LogEntryObject) Log(
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	if len(fstring) > 0 {
 		err = json.Unmarshal(fstring, &ls)
 		if err != nil {
@@ -162,6 +179,7 @@ func (logEntry LogEntryObject) Log(
 	} else {
 		ls = append(ls, logEntry)
 	}
+
 	j, err := json.Marshal(ls)
 	if err != nil {
 		fmt.Println(err)
@@ -172,6 +190,9 @@ func (logEntry LogEntryObject) Log(
 	defer f.Close()
 }
 
-func (l LogEntryObject) [Type]SizeOfData(T Type) float64 {
-	
+func (l LogEntryObject) SizeOfData(dr DetailedResponse[T]) float64 {
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	enc.Encode(dr)
+	return float64(network.Len()) / 1024
 }

@@ -33,6 +33,7 @@ func (dr DetailedResponse[T]) ConsumeError(
 	w http.ResponseWriter,
 	code int,
 ) {
+	dr.Data = nil
 	dr.UDRWrite(w, code, err.Error(), false)
 }
 
