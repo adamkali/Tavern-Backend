@@ -3,6 +3,8 @@
 *.exe
 **/env
 **/.git
-
+PlannedChanges.md
+README.md
+Roadmap.md
 
 

@@ -43,6 +43,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: Refactor For Scalability
 	var user models.User
 	var plot models.Plot
 	var character models.Character
@@ -59,9 +61,14 @@ func main() {
 		&tags,
 		&pref,
 	)
-	userH := controllers.NewUserHandler(*db, config) //#2
-	characterH := controllers.NewCharacterHandler(*db)
-	plotH := controllers.NewPlotHandler(*db)
+
+	// Instantiate the controllers
+	userController := controllers.NewUserController(db)
+	authController := controllers.NewAuthController(db)
+	plotController := controllers.NewPlotController(db)
+	characterController := controllers.NewCharacterController(db)
+	relationshipController := controllers.NewRelationshipController(db)
+	// :ENDTODO
 
 	// Create a cors middleware to allow cross-origin requests.
 	// have it return the handler function.
@@ -72,32 +79,39 @@ func main() {
 		AllowedMethods:   config.Cors.AllowedMethods,
 	})
 
+	// TODO: Refactor For Scalability
 	entries := lib.LogEntries{}
 	entries.StartLogging()
-	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+	http.Handle("/api/admin/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		entries.RenderHtml(w)
 	}))
-	http.Handle("/api/auth/enums/tags", cors.Handler(http.HandlerFunc(userH.GetAuthTags)))
-	http.Handle("/api/auth/enums/preferences", cors.Handler(http.HandlerFunc(userH.GetAuthPreferences)))
-	http.Handle("/api/auth/users/", cors.Handler(http.HandlerFunc(userH.AuthUpdateUserByID)))
-	http.Handle("/api/auth/user/", cors.Handler(http.HandlerFunc(userH.GetAuthUserByID)))
-	http.Handle("/api/activate/", cors.Handler(http.HandlerFunc(userH.Activate)))
-	http.Handle("/api/signup", cors.Handler(http.HandlerFunc(userH.Signup)))
-	http.Handle("/api/login", cors.Handler(http.HandlerFunc(userH.Login)))
-	http.Handle("/api/users", cors.Handler(http.HandlerFunc(userH.Users)))
-	http.Handle("/api/characters/userId/", cors.Handler(http.HandlerFunc(characterH.Characters)))
-	http.Handle("/api/plots/userId/", cors.Handler(http.HandlerFunc(plotH.Plots)))
-	http.Handle("/api/characters/", cors.Handler(http.HandlerFunc(characterH.Character)))
-	http.Handle("/api/plots/", cors.Handler(http.HandlerFunc(plotH.Plot)))
-	http.Handle("/api/users/", cors.Handler(http.HandlerFunc(userH.User)))
-	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
-}
+	http.Handle(userController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(userController.H.Controller)))
+	http.Handle(userController.H.AdmnAllPath,
+		cors.Handler(http.HandlerFunc(userController.AdminGetAll)))
+	http.Handle(userController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(userController.UserQueue)))
+	http.Handle(userController.H.AuthPath+"full",
+		cors.Handler(http.HandlerFunc(userController.GetAuthenticatedUser)))
+	http.Handle(userController.H.AuthPath+"full/",
+		cors.Handler(http.HandlerFunc(userController.AuthGetByIDFull)))
+	http.Handle("/api/login",
+		cors.Handler(http.HandlerFunc(authController.Login)))
+	http.Handle("/api/signup",
+		cors.Handler(http.HandlerFunc(authController.SignUp)))
+	http.Handle("/api/verify",
+		cors.Handler(http.HandlerFunc(authController.Verify)))
+	http.Handle(characterController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(characterController.H.Controller)))
+	http.Handle(characterController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(characterController.AuthGetAllCByUserID)))
+	http.Handle(plotController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(plotController.H.Controller)))
+	http.Handle(plotController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(plotController.AuthGetAllPByUserID)))
+	http.Handle(relationshipController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(relationshipController.H.Controller)))
 
-// make an http.Handler that will hold the request and return a http.HandlerFunc
-// that will handle the request.
-func LogWrapper(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r.URL.Path)
-		handler.ServeHTTP(w, r)
-	})
+	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
+	// :ENDTODO
 }

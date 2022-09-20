@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"text/template"
 	"time"
 )
@@ -28,7 +27,7 @@ type LogEntryObject struct {
 	StatusCode int          // 200, 404, 500, etc
 	DateTime   string       // in the format of 2006-01-02 15:04:05
 	TimeTaken  int64        // in milliseconds
-	Size       float64      // in kilobytes
+	Size       float32      // in kilobytes
 	Reason     string       // a message to explain the status code
 	Error      error        // nil if there is no error
 	Message    string       // SUCCESS, FAILURE, ERROR
@@ -130,15 +129,20 @@ func (ls LogEntries) RenderHtml(w http.ResponseWriter) {
 }
 
 func (logEntry LogEntryObject) Log(
-	dr DetailedResponse[T],
+	size float32,
 	statusCode int,
 	reason string,
 	er ...error,
 ) {
 	ls := LogEntries{}
 
-	logEntry.TimeTaken = time.Since(logEntry.TimeTaken).Milliseconds()
-	logEntry.Size = logEntry.SizeOfData(dr)
+	i, err := strconv.ParseInt(fmt.Sprintf("%d", logEntry.TimeTaken), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	tm := time.Unix(i, 0)
+	logEntry.TimeTaken = time.Since(tm).Milliseconds()
+	logEntry.Size = size
 	logEntry.StatusCode = statusCode
 
 	if er != nil {
@@ -188,11 +192,4 @@ func (logEntry LogEntryObject) Log(
 		fmt.Println(err)
 	}
 	defer f.Close()
-}
-
-func (l LogEntryObject) SizeOfData(dr DetailedResponse[T]) float64 {
-	var network bytes.Buffer
-	enc := gob.NewEncoder(&network)
-	enc.Encode(dr)
-	return float64(network.Len()) / 1024
 }

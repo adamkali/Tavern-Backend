@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"Tavern-Backend/models"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -90,4 +91,13 @@ func LoadConfiguration(local bool) Configuration {
 
 func (config Configuration) GetDatabaseConnectionString() string {
 	return config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + config.Database.Port + ")/" + config.Database.Database + "?charset=utf8mb4&parseTime=True&loc=Local"
+}
+
+func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {
+	return models.AuthEmailConfiglette{
+		Host:     config.Email.Host,
+		Port:     config.Email.Port,
+		Username: config.Email.Username,
+		Password: config.Email.Password,
+	}
 }

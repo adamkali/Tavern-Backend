@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	"net/http"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -38,9 +40,19 @@ func generatePin() string {
 	return pin
 }
 
-func verifyAuthorizationToken(db gorm.DB, authToken string) (models.AuthToken, error) {
+func verifyAuthorizationToken(db gorm.DB, r *http.Request) (models.AuthToken, error) {
 	var data models.AuthToken
-	result := db.Where("token = ?", authToken).First(&data)
+
+	// Get the token from the header
+	authToken := r.Header.Get("Authorization")
+	if authToken == "" {
+		return data, fmt.Errorf("No token provided")
+	}
+
+	// split the token 'Bearer <token>'
+	splitToken := strings.Split(authToken, " ")
+
+	result := db.Where("token = ?", splitToken).First(&data)
 	if result.Error != nil {
 		return models.AuthToken{}, result.Error
 	}

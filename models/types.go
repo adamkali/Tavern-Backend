@@ -1,7 +1,6 @@
 package models
 
 import (
-	"Tavern-Backend/lib"
 	"crypto/sha256"
 	"encoding/hex"
 	"io/ioutil"
@@ -12,6 +11,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
+// #region TYPES
 type Plot struct {
 	ID     string `json:"id" gorm:"column:id;type:varchar(32)"`
 	Name   string `json:"plot_name" gorm:"column:name;type:varchar(128) not null"`
@@ -40,17 +40,15 @@ type Character struct {
 }
 
 type User struct {
-	ID              string `json:"id" gorm:"column:id;type:varchar(32)"`
-	Username        string `json:"username" gorm:"column:username;type:varchar(128) not null"`
-	Bio             string `json:"bio" grom:"column:bio;type:text not null"`
-	Tags            string `json:"tags" grom:"column:tags;type:text not null"`
-	PlayerPrefrence string `json:"player_prefrence" gorm:"column:player_preference;type:varchar(32)"`
-	//	Plots           []Plot      `json:"user_plots,omitempty" gorm:"foreignKey:UserID;refernces:ID"`
-	//	Characters      []Character `json:"user_characters,omitempty" gorm:"foreignKey:UserID;refernces:ID"`
-	Plots      []Plot      `json:"user_plots,omitempty"`
-	Characters []Character `json:"user_characters,omitempty"`
+	ID               string            `json:"id" gorm:"column:id;type:varchar(32)"`
+	Username         string            `json:"username" gorm:"column:username;type:varchar(128) not null"`
+	Bio              string            `json:"bio" grom:"column:bio;type:text not null"`
+	Plots            []Plot            `json:"user_plots,omitempty"`
+	Characters       []Character       `json:"user_characters,omitempty"`
+	Tags             []Tag             `json:"user_tags,omitempty"`
+	PlayerPrefrences []PlayerPrefrence `json:"user_player_prefrences,omitempty"`
 
-	GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
+	// GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
 }
 
 type Group struct {
@@ -65,6 +63,7 @@ type AuthToken struct {
 	UserEmail string `json:"user_email" gorm:"column:email;type:varchar(128) not null"`
 	AuthHash  string `json:"auth_hash" gorm:"column:auth_hash;type:varchar(128) not null"`
 	Active    bool   `json:"active" gorm:"column:active;type:tinyint(1) not null"`
+	Role      Role   `json:"role" gorm:"foreignKey:RoleID;refernces:ID"`
 }
 
 type AuthTokenActivation struct {
@@ -74,20 +73,44 @@ type AuthTokenActivation struct {
 	AuthEmail string `json:"auth_email" gorm:"column:auth_email;type:varchar(128) not null"`
 }
 
-type Users []User
-
-type AuthRequest struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	UserEmail string `json:"user_email"`
+type UserRelationship struct {
+	ID        string       `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
+	Self      string       `json:"self" gorm:"column:self;type:varchar(32)"`
+	SelfUser  User         `json:"self_user, omitempty"`
+	Other     string       `json:"other" gorm:"column:other;type:varchar(32)"`
+	OtherUser User         `json:"other_user, omitempty"`
+	Type      Relationship `json:"type" gorm:"column:type;type:varchar(32)"`
 }
 
-type LoginRequest struct {
+type UserRelationships struct {
+	UserRelationships []UserRelationship `json:"user_relationships"`
+	TempID            string             `json:"temp_id"`
+}
+type Characters struct {
+	Characters []Character `json:"characters"`
+	TempID     string      `json:"temp_id"`
+}
+type Users struct {
+	Users  []User `json:"users"`
+	TempID string `json:"temp_id"`
+}
+type Plots struct {
+	Plots  []Plot `json:"plots"`
+	TempID string `json:"temp_id"`
+}
+
+type AuthEmailConfiglette struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-func (a AuthTokenActivation) SendRegistrationEmail(config lib.Configuration) error {
+// #endregion
+
+// #region AUTHENTICATION
+
+func (a AuthTokenActivation) SendRegistrationEmail(config AuthEmailConfiglette) error {
 	msg := gomail.NewMessage()
 
 	// read a file from Tavern-Backend/lib/html/Registration.html
@@ -114,12 +137,12 @@ func (a AuthTokenActivation) SendRegistrationEmail(config lib.Configuration) err
 	// send the email
 	fl = strings.Replace(fl, "<<<code>>>", a.AuthPin, -1)
 
-	msg.SetHeader("From", config.Email.Username)
+	msg.SetHeader("From", config.Username)
 	msg.SetHeader("To", a.AuthEmail)
 	msg.SetHeader("Subject", "Tavern Registration")
 	msg.SetBody("text/html", fl)
 
-	d := gomail.NewDialer(config.Email.Host, config.Email.Port, config.Email.Username, config.Email.Password)
+	d := gomail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 	if err := d.DialAndSend(msg); err != nil {
 		return err
 	}
@@ -131,7 +154,7 @@ func (a AuthTokenActivation) SendRegistrationEmail(config lib.Configuration) err
 // and then return a token
 // This function will use a hash function to create a hash
 // by using the username, password, and userID
-func (t *AuthToken) GenerateToken(username string, password string) {
+func (t *AuthToken) GenerateToken(username string, password string, user_email string) {
 	// Create a hash function
 	hash := sha256.New()
 	// Write the username, password, and userID to the hash function
@@ -143,7 +166,7 @@ func (t *AuthToken) GenerateToken(username string, password string) {
 	hashString := hex.EncodeToString(hashValue)
 	// Set the AuthToken struct values
 	t.Username = username
-	t.UserEmail = password
+	t.UserEmail = user_email
 	t.AuthHash = hashString
 }
 
@@ -215,3 +238,145 @@ func (t *AuthToken) ValidatePassword(password string) bool {
 	}
 	return true
 }
+
+func (t *AuthToken) IsAdmin() bool {
+	return t.Role.RoleName == "Admin"
+}
+
+func (t *AuthToken) IsPremium() bool {
+	return t.Role.RoleName == "Premium" || t.Role.RoleName == "Admin" || t.Role.RoleName == "Lifetime Premium"
+}
+
+func (t *AuthToken) IsLifetimePremium() bool {
+	return t.Role.RoleName == "Lifetime Premium" || t.Role.RoleName == "Admin"
+}
+
+// #endregion
+
+// #region COMMON FUNCTIONS
+func (u User) SetID(id string)                { u.ID = id }
+func (u Plot) SetID(id string)                { u.ID = id }
+func (u Character) SetID(id string)           { u.ID = id }
+func (u UserRelationship) SetID(id string)    { u.ID = id }
+func (u AuthToken) SetID(id string)           { u.ID = id }
+func (u AuthTokenActivation) SetID(id string) { u.ID = id }
+func (u User) GetID() string                  { return u.ID }
+func (u Plot) GetID() string                  { return u.ID }
+func (u Character) GetID() string             { return u.ID }
+func (u UserRelationship) GetID() string      { return u.ID }
+func (u AuthToken) GetID() string             { return u.ID }
+func (u AuthTokenActivation) GetID() string   { return u.ID }
+
+// implement the GetID and SetID functions for
+// Users, Plots, Characters, UserRelationships, AuthTokens, and AuthTokenActivations
+func (u Users) GetID() string {
+	var ret []string
+	for _, v := range u.Users {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u Users) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.Users[i].SetID(v)
+	}
+}
+
+// Follow the above pattern for the rest of the
+// IData Types
+func (u Plots) GetID() string {
+	var ret []string
+	for _, v := range u.Plots {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u Plots) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.Plots[i].SetID(v)
+	}
+}
+func (u Characters) GetID() string {
+	var ret []string
+	for _, v := range u.Characters {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u Characters) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.Characters[i].SetID(v)
+	}
+}
+
+//Tags
+func (u Tags) GetID() string {
+	var ret []string
+	for _, v := range u.Tags {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u Tags) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.Tags[i].SetID(v)
+	}
+}
+
+//Player Preference
+func (u PlayerPrefrences) GetID() string {
+	var ret []string
+	for _, v := range u.PlayerPrefrences {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u PlayerPrefrences) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.PlayerPrefrences[i].SetID(v)
+	}
+}
+
+//Relationships
+func (u Relationships) GetID() string {
+	var ret []string
+	for _, v := range u.Relationships {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u Relationships) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.Relationships[i].SetID(v)
+	}
+}
+
+//UserRelationships
+func (u UserRelationships) GetID() string {
+	var ret []string
+	for _, v := range u.UserRelationships {
+		ret = append(ret, v.GetID())
+	}
+	completeRet := strings.Join(ret, ",")
+	return completeRet
+}
+func (u UserRelationships) SetID(id string) {
+	splitIds := strings.Split(id, ",")
+	for i, v := range splitIds {
+		u.UserRelationships[i].SetID(v)
+	}
+}
+
+// #endregion
