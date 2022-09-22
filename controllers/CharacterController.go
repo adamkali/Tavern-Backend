@@ -17,6 +17,8 @@ func NewCharacterController(DB *gorm.DB) *CharacterController {
 }
 
 func (c *CharacterController) AuthGetAllCByUserID(w http.ResponseWriter, r *http.Request) {
+	c.H.Model = models.Character{}
+
 	logger := lib.New(r)
 	c.H.ForceGET(w, r)
 

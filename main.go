@@ -45,14 +45,18 @@ func main() {
 	}
 
 	// TODO: Refactor For Scalability
-	var user models.User
-	var plot models.Plot
-	var character models.Character
-	var token models.AuthToken
-	var authTA models.AuthTokenActivation
-	var tags models.Tags
-	var pref models.PlayerPrefrence
-	db.AutoMigrate(
+	user := models.User{}
+	plot := models.Plot{}
+	character := models.Character{}
+	token := models.AuthToken{}
+	authTA := models.AuthTokenActivation{}
+	tags := models.Tag{}
+	pref := models.PlayerPrefrence{}
+	role := models.Role{}
+	relationship := models.UserRelationship{}
+	rels := models.Relationship{}
+
+	err = db.AutoMigrate(
 		&user,
 		&plot,
 		&character,
@@ -60,14 +64,24 @@ func main() {
 		&authTA,
 		&tags,
 		&pref,
+		&role,
+		&relationship,
+		&rels,
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	// Instantiate the controllers
 	userController := controllers.NewUserController(db)
-	authController := controllers.NewAuthController(db)
+	authController := controllers.NewAuthController(db, models.AuthEmailConfiglette(config.Email))
 	plotController := controllers.NewPlotController(db)
 	characterController := controllers.NewCharacterController(db)
 	relationshipController := controllers.NewRelationshipController(db)
+	tagController := controllers.NewTagController(db)
+	prefController := controllers.NewPlayerPrefrenceController(db)
+	roleController := controllers.NewRoleController(db)
+	relsController := controllers.NewRelsController(db)
 	// :ENDTODO
 
 	// Create a cors middleware to allow cross-origin requests.
@@ -111,7 +125,26 @@ func main() {
 		cors.Handler(http.HandlerFunc(plotController.AuthGetAllPByUserID)))
 	http.Handle(relationshipController.H.AuthPath,
 		cors.Handler(http.HandlerFunc(relationshipController.H.Controller)))
-
+	http.Handle(tagController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(tagController.H.Controller)))
+	http.Handle(tagController.H.AuthPath+"add",
+		cors.Handler(http.HandlerFunc(tagController.AuthPostTagToUser)))
+	http.Handle(tagController.H.AuthAllPath+"add",
+		cors.Handler(http.HandlerFunc(tagController.AuthPostTagsToUser)))
+	http.Handle(tagController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(tagController.AuthGetTags)))
+	http.Handle(prefController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(prefController.H.Controller)))
+	http.Handle(prefController.H.AuthPath+"add",
+		cors.Handler(http.HandlerFunc(prefController.AuthPostPlayerPrefrenceToUser)))
+	http.Handle(prefController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(prefController.AuthGetPrefrences)))
+	http.Handle(roleController.H.AdmnPath,
+		cors.Handler(http.HandlerFunc(roleController.AdminChangeRole)))
+	http.Handle(relsController.H.AuthPath,
+		cors.Handler(http.HandlerFunc(relsController.H.Controller)))
+	http.Handle(relsController.H.AuthAllPath,
+		cors.Handler(http.HandlerFunc(relsController.AuthGetRelationships)))
 	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
 	// :ENDTODO
 }

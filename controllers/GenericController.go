@@ -50,6 +50,7 @@ func (h *BaseHandler[Model]) SetAuthToken(token models.AuthToken) {
 }
 
 func (h *BaseHandler[Model]) authGetByID(w http.ResponseWriter, r *http.Request) {
+	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token
@@ -94,6 +95,7 @@ func (h *BaseHandler[Model]) authGetByID(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *BaseHandler[Model]) authUpdateOrInsert(w http.ResponseWriter, r *http.Request) {
+	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token
@@ -158,6 +160,7 @@ func (h *BaseHandler[Model]) authUpdateOrInsert(w http.ResponseWriter, r *http.R
 }
 
 func (h *BaseHandler[Model]) authDeleteByID(w http.ResponseWriter, r *http.Request) {
+	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token

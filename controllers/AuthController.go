@@ -4,20 +4,27 @@ import (
 	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"gorm.io/gorm"
 )
 
-type AuthController struct{ H BaseHandler[models.AuthToken] }
+type AuthController struct {
+	H BaseHandler[models.AuthToken]
+	C models.AuthEmailConfiglette
+}
 
-func NewAuthController(DB *gorm.DB) *AuthController {
+func NewAuthController(DB *gorm.DB, C models.AuthEmailConfiglette) *AuthController {
 	return &AuthController{
 		H: *NewHandler(DB, models.AuthToken{}, "auth"),
+		C: C,
 	}
 }
 
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
+	c.H.AuthToken = models.AuthToken{}
+
 	logger := lib.New(r)
 	c.H.ForcePOST(w, r)
 
@@ -57,6 +64,8 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
+	c.H.AuthToken = models.AuthToken{}
+
 	logger := lib.New(r)
 	c.H.ForcePOST(w, r)
 
@@ -105,22 +114,27 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate the hash
+	c.H.AuthToken.ID = (generateUUID())
 	c.H.AuthToken.GenerateToken(req.Username, req.Password, req.UserEmail)
-	res = c.H.DB.Create(&c.H.AuthToken)
+	c.H.AuthToken.RoleFK = "4915B1FE0F7643F692FC25B3A60CC762"
+	// // get the role
+	// res = c.H.DB.Where("id = ?", c.H.AuthToken.RoleFK).First(&c.H.AuthToken.Role)
+	// if res.Error != nil {
+	// 	c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+	// 	size := c.H.Response.SizeOf()
+	// 	logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+	// 	return
+	// }
+	c.H.Response.Data = c.H.AuthToken
+	res = c.H.DB.Preload("Role").Create(&c.H.AuthToken)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
 		size := c.H.Response.SizeOf()
 		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
 		return
 	}
-
 	// Give the Token a role of "Not Verified" by default
-	role := models.Role{
-		RoleName: "Not Verified",
-		ID:       "00000000-0000-0000-0000-000000000000",
-	}
 
-	c.H.AuthToken.Role = role
 	// update the auth token with the role
 	res = c.H.DB.Save(&c.H.AuthToken)
 	if res.Error != nil {
@@ -130,6 +144,22 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// make a new auth activation token
+	aat := models.AuthTokenActivation{
+		ID:        generateUUID(),
+		AuthPin:   generatePin(),
+		AuthEmail: req.UserEmail,
+		AuthID:    c.H.AuthToken.ID,
+	}
+	res = c.H.DB.Create(&aat)
+	if res.Error != nil {
+		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+	aat.SendRegistrationEmail(c.C)
+
 	// OK Response
 	c.H.Response.OK(w, c.H.AuthToken)
 	size := c.H.Response.SizeOf()
@@ -137,6 +167,7 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) Verify(w http.ResponseWriter, r *http.Request) {
+	c.H.AuthToken = models.AuthToken{}
 	logger := lib.New(r)
 	c.H.ForcePOST(w, r)
 	var authActivation models.AuthTokenActivation
@@ -159,18 +190,18 @@ func (c *AuthController) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer body.Close()
+	fmt.Println(req)
 
 	// get the token from the database
-	res := c.H.DB.Where("pin = ? AND auth_email = ?", req.Pin, req.UserEmail).First(&authActivation)
+	res := c.H.DB.Where("auth_pin = ? AND auth_email = ?", req.Pin, req.UserEmail).First(&authActivation)
 	if res.Error != nil {
 		c.H.Response.UDRWrite(w, http.StatusUnauthorized, "Invalid credentials", false)
 		size := c.H.Response.SizeOf()
 		logger.Log(size, http.StatusUnauthorized, "Invalid credentials", res.Error)
 		return
 	}
-
 	// get the auth token from the database using the auth_hash from the authActivation
-	res = c.H.DB.Where("auth_fk = ?", authActivation.AuthID).First(&c.H.AuthToken)
+	res = c.H.DB.Where("id = ?", authActivation.AuthID).Preload("Role").First(&c.H.AuthToken)
 	if res.Error != nil {
 		c.H.Response.UDRWrite(w, http.StatusUnauthorized, "Invalid credentials", false)
 		size := c.H.Response.SizeOf()
@@ -187,13 +218,10 @@ func (c *AuthController) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.H.AuthToken.Active = true
-	c.H.AuthToken.Role = models.Role{
-		RoleName: "User",
-		ID:       "11111111-1111-1111-1111-111111111111",
-	}
+	c.H.AuthToken.RoleFK = "747A97752DA547348E21E93DAF207A43"
 
 	// update the auth token with the role
-	res = c.H.DB.Save(&c.H.AuthToken)
+	res = c.H.DB.Preload("Role").Save(&c.H.AuthToken)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
 		size := c.H.Response.SizeOf()

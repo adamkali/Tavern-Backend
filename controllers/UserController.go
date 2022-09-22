@@ -20,6 +20,8 @@ func NewUserController(DB *gorm.DB) *UserController {
 
 // #region Users
 func (c *UserController) AdminGetAll(w http.ResponseWriter, r *http.Request) {
+	c.H.Model = models.User{}
+
 	logger := lib.New(r)
 	c.H.ForceGET(w, r)
 
@@ -58,6 +60,8 @@ func (c *UserController) AdminGetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
+	c.H.Model = models.User{}
+
 	logger := lib.New(r)
 	c.H.ForceGET(w, r)
 
@@ -114,7 +118,7 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 				errChan <- res.Error
 				return
 			}
-			if !relat.Type.Negative {
+			if !relat.Relationship.Negative {
 				queue[i] <- user
 			} else {
 				// get a new user from the database
@@ -168,6 +172,8 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 
 // #region User
 func (c *UserController) GetAuthenticatedUser(w http.ResponseWriter, r *http.Request) {
+	c.H.Model = models.User{}
+
 	logger := lib.New(r)
 	c.H.ForceGET(w, r)
 
@@ -208,6 +214,8 @@ func (c *UserController) GetAuthenticatedUser(w http.ResponseWriter, r *http.Req
 }
 
 func (c *UserController) AuthGetByIDFull(w http.ResponseWriter, r *http.Request) {
+	c.H.Model = models.User{}
+
 	logger := lib.New(r)
 	c.H.ForceGET(w, r)
 

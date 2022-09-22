@@ -26,6 +26,7 @@ type IData interface {
 		Role
 	SetID(string)
 	GetID() string
+	NewData() interface{}
 }
 
 type DetailedResponse[T IData] struct {

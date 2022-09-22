@@ -1,19 +1,19 @@
 package models
 
+import "gorm.io/gorm"
+
 type Tag struct {
-	ID      string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
-	TagID   int    `json:"tag_id" gorm:"column:tag_id;type:smallint(255);not null"`
+	ID      string `json:"id" gorm:"primaryKey; type:varchar(32);"`
 	TagName string `json:"tag_name" gorm:"column:tag_name;varchar(32) not null"`
 }
 
 type PlayerPrefrence struct {
-	ID           string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
-	PreferenceID int    `json:"pref_id" gorm:"column:pref_id;type:smallint(255);not null"`
-	Preference   string `json:"pref_name" gorm:"column:pref_name;varchar(32) not null"`
+	ID         string `json:"id" gorm:"primaryKey; type:varchar(32);"`
+	Preference string `json:"pref_name" gorm:"column:pref_name;varchar(32) not null"`
 }
 
 type Relationship struct {
-	ID               string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
+	ID               string `json:"id" gorm:"primaryKey; type:varchar(32);"`
 	RelationshipName string `json:"relationship_name" gorm:"column:relationship_name;varchar(32) not null"`
 	Negative         bool   `json:"negative" gorm:"column:negative;type:tinyint(1);not null"`
 }
@@ -40,8 +40,8 @@ type Relationships struct {
 // - User: Can access basic features
 // - Banned: Can only access Home Page
 type Role struct {
-	ID       string `json:"id" gorm:"primaryKey; not null; type:varchar(32);"`
-	RoleName string `json:"role_name" gorm:"column:role_name;varchar(32) not null"`
+	ID       string `json:"id" gorm:"primaryKey; type:varchar(32);"`
+	RoleName string `json:"role_name" gorm:"column:role_name;varchar(32) not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // #region COMMON FUNCTIONS
@@ -53,5 +53,20 @@ func (t Tag) GetID() string               { return t.ID }
 func (t PlayerPrefrence) GetID() string   { return t.ID }
 func (t Relationship) GetID() string      { return t.ID }
 func (t Role) GetID() string              { return t.ID }
+func (t Tag) NewData() interface{}        { return &Tag{} }
+func (t PlayerPrefrence) NewData() interface{} {
+	return &PlayerPrefrence{}
+}
+func (t Relationship) NewData() interface{} {
+	return &Relationship{}
+}
+func (t Role) NewData() interface{} { return &Role{} }
+
+// #endregion
+
+// #region Premable Functions
+func EnsureEnums(db *gorm.DB) error {
+	return nil
+}
 
 // #endregion

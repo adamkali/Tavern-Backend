@@ -52,3 +52,15 @@ type RolesRequest struct {
 	UserID string `json:"user_id"`
 	Roles  []Role `json:"roles"`
 }
+
+type RoleChangeRequest struct {
+	UserID string `json:"user_id"`
+	RoleID string `json:"role_id"`
+}
+
+type ReportRequest struct {
+	ReporterID string `json:"reporter_id"`
+	ReportedID string `json:"reported_id"`
+	Reason     string `json:"reason"`
+	Date       string `json:"date"`
+}

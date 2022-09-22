@@ -1,4 +1,4 @@
-FROM golang:1.19-bullseye AS builder
+FROM golang:1.18-bullseye AS builder
 
 # make the working directory as /app
 WORKDIR /app

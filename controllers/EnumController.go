@@ -238,62 +238,7 @@ func (c *PlayerPrefrenceController) AuthPostPlayerPrefrenceToUser(w http.Respons
 		logger.Log(size, http.StatusBadRequest, "Validation Failed")
 	}
 	// add the PlayerPrefrence to the user
-	user.PlayerPrefrences = append(user.PlayerPrefrences, req.Pref)
-	// save the user
-	res = c.H.DB.Save(&user)
-	if res.Error != nil {
-		Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
-		size := Response.SizeOf()
-		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
-		return
-	}
-
-	Response.OK(w, user)
-	size := Response.SizeOf()
-	logger.Log(size, http.StatusOK, "OK")
-}
-
-func (c *PlayerPrefrenceController) AuthPostPlayerPrefrencesToUser(w http.ResponseWriter, r *http.Request) {
-	logger := lib.New(r)
-	c.H.ForcePOST(w, r)
-
-	// set the Detailed Response to be a User
-	var Response models.DetailedResponse[models.User]
-
-	// authenticate the header
-	token, err := verifyAuthorizationToken(*c.H.DB, r)
-	if err != nil {
-		Response.ConsumeError(w, err, http.StatusUnauthorized)
-		size := Response.SizeOf()
-		logger.Log(size, http.StatusUnauthorized, "Unauthorized", err)
-		return
-	}
-	c.H.SetAuthToken(token)
-	var user models.User
-	res := c.H.DB.First(&user, c.H.AuthToken.UserID)
-	if res.Error != nil {
-		Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
-		size := Response.SizeOf()
-		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
-		return
-	}
-	// get the []PlayerPrefrence from the body
-	var req models.PrefrencesRequest
-	// Decode the r.Body into the model
-	body := r.Body
-	err = json.NewDecoder(body).Decode(&req)
-	if err != nil {
-		Response.ConsumeError(w, err, http.StatusBadRequest)
-		size := Response.SizeOf()
-		logger.Log(size, http.StatusBadRequest, "Bad Request", err)
-		return
-	} else if req.UserID != c.H.AuthToken.UserID {
-		Response.UDRWrite(w, http.StatusBadRequest, "Validation Failed", false)
-		size := Response.SizeOf()
-		logger.Log(size, http.StatusBadRequest, "Validation Failed")
-	}
-	// add the PlayerPrefrence to the user
-	user.PlayerPrefrences = append(user.PlayerPrefrences, req.Prefs...)
+	user.PlayerPrefrence = req.Pref
 	// save the user
 	res = c.H.DB.Save(&user)
 	if res.Error != nil {
@@ -378,3 +323,77 @@ func (c *RelsController) AuthGetRelationships(w http.ResponseWriter, r *http.Req
 }
 
 // #endregion
+
+// #region Enum Roles Definitions
+func (c *RoleController) AdminChangeRole(w http.ResponseWriter, r *http.Request) {
+	logger := lib.New(r)
+	c.H.ForcePOST(w, r)
+
+	// set the Detailed Response to be a User
+	var Response models.DetailedResponse[models.AuthToken]
+	// authenticate the header
+	token, err := verifyAuthorizationToken(*c.H.DB, r)
+	if err != nil {
+		Response.ConsumeError(w, err, http.StatusUnauthorized)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusUnauthorized, "Unauthorized", err)
+		return
+	}
+	c.H.SetAuthToken(token)
+	// check if the user is an admin
+	if !c.H.AuthToken.IsAdmin() {
+		Response.UDRWrite(w, http.StatusUnauthorized, "Unauthorized", false)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	// get the body
+	var req models.RoleChangeRequest
+	body := r.Body
+	err = json.NewDecoder(body).Decode(&req)
+	if err != nil {
+		Response.ConsumeError(w, err, http.StatusBadRequest)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusBadRequest, "Bad Request", err)
+		return
+	}
+
+	// get the auth token from user id
+	var otherToken models.AuthToken
+	res := c.H.DB.First(&otherToken, req.UserID)
+	if res.Error != nil {
+		Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+	// get the role by userID
+	var role models.Role
+	res = c.H.DB.First(&role, req.RoleID)
+	if res.Error != nil {
+		Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+	// change the role
+	otherToken.Role = role
+	res = c.H.DB.Save(&otherToken)
+	if res.Error != nil {
+		Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	} else if res.RowsAffected == 0 {
+		Response.UDRWrite(w, http.StatusNotFound, "Not Found", false)
+		size := Response.SizeOf()
+		logger.Log(size, http.StatusNotFound, "Not Found")
+		return
+	}
+
+	Response.OK(w, otherToken)
+	size := Response.SizeOf()
+	logger.Log(size, http.StatusOK, "OK")
+}
+
+//#endregion

@@ -40,13 +40,13 @@ type Character struct {
 }
 
 type User struct {
-	ID               string            `json:"id" gorm:"column:id;type:varchar(32)"`
-	Username         string            `json:"username" gorm:"column:username;type:varchar(128) not null"`
-	Bio              string            `json:"bio" grom:"column:bio;type:text not null"`
-	Plots            []Plot            `json:"user_plots,omitempty"`
-	Characters       []Character       `json:"user_characters,omitempty"`
-	Tags             []Tag             `json:"user_tags,omitempty"`
-	PlayerPrefrences []PlayerPrefrence `json:"user_player_prefrences,omitempty"`
+	ID              string          `json:"id" gorm:"column:id;type:varchar(32)"`
+	Username        string          `json:"username" gorm:"column:username;type:varchar(128) not null"`
+	Bio             string          `json:"bio" grom:"column:bio;type:text not null"`
+	Plots           []Plot          `json:"user_plots,omitempty"`
+	Characters      []Character     `json:"user_characters,omitempty"`
+	Tags            []Tag           `json:"user_tags,omitempty" gorm:"many2many:user_tags;"`
+	PlayerPrefrence PlayerPrefrence `json:"user_player_prefrences,omitempty" gorm:"foreignKey:ID;"`
 
 	// GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
 }
@@ -63,7 +63,8 @@ type AuthToken struct {
 	UserEmail string `json:"user_email" gorm:"column:email;type:varchar(128) not null"`
 	AuthHash  string `json:"auth_hash" gorm:"column:auth_hash;type:varchar(128) not null"`
 	Active    bool   `json:"active" gorm:"column:active;type:tinyint(1) not null"`
-	Role      Role   `json:"role" gorm:"foreignKey:RoleID;refernces:ID"`
+	RoleFK    string `json:"role_fk,omitempty"`
+	Role      Role   `json:"role" gorm:"foreignKey:RoleFK;refrences:ID"`
 }
 
 type AuthTokenActivation struct {
@@ -74,12 +75,11 @@ type AuthTokenActivation struct {
 }
 
 type UserRelationship struct {
-	ID        string       `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
-	Self      string       `json:"self" gorm:"column:self;type:varchar(32)"`
-	SelfUser  User         `json:"self_user, omitempty"`
-	Other     string       `json:"other" gorm:"column:other;type:varchar(32)"`
-	OtherUser User         `json:"other_user, omitempty"`
-	Type      Relationship `json:"type" gorm:"column:type;type:varchar(32)"`
+	ID             string       `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
+	SelfID         string       `json:"self_id" gorm:"column:self_id;type:varchar(32) not null"`
+	OtherID        string       `json:"other_id" gorm:"column:other_id;type:varchar(32) not null"`
+	RelationshipFK string       `json:"type_fk,omitempty"`
+	Relationship   Relationship `json:"type" gorm:"foreignKey:RelationshipFK;refrences:ID"`
 }
 
 type UserRelationships struct {
@@ -168,6 +168,7 @@ func (t *AuthToken) GenerateToken(username string, password string, user_email s
 	t.Username = username
 	t.UserEmail = user_email
 	t.AuthHash = hashString
+	t.Active = false
 }
 
 func (t *AuthToken) VerifyToken(username string, password string) bool {
@@ -266,6 +267,16 @@ func (u Character) GetID() string             { return u.ID }
 func (u UserRelationship) GetID() string      { return u.ID }
 func (u AuthToken) GetID() string             { return u.ID }
 func (u AuthTokenActivation) GetID() string   { return u.ID }
+func (u User) NewData() interface{}           { return &User{} }
+func (u Plot) NewData() interface{}           { return &Plot{} }
+func (u Character) NewData() interface{}      { return &Character{} }
+func (u UserRelationship) NewData() interface{} {
+	return &UserRelationship{}
+}
+func (u AuthToken) NewData() interface{} { return &AuthToken{} }
+func (u AuthTokenActivation) NewData() interface{} {
+	return &AuthTokenActivation{}
+}
 
 // implement the GetID and SetID functions for
 // Users, Plots, Characters, UserRelationships, AuthTokens, and AuthTokenActivations
