@@ -67,12 +67,15 @@ type AuthToken struct {
 	Role      Role   `json:"role" gorm:"foreignKey:RoleFK;refrences:ID"`
 }
 
+// TODO: #3 Add functionallity to send a text message
 type AuthTokenActivation struct {
 	ID        string `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
 	AuthID    string `json:"auth_fk,omitempty" gorm:"foreignKey:AuthID;refernces:ID"`
 	AuthPin   string `json:"auth_pin" gorm:"column:auth_pin;type:varchar(8) not null"`
 	AuthEmail string `json:"auth_email" gorm:"column:auth_email;type:varchar(128) not null"`
 }
+
+// :ENDTODO
 
 type UserRelationship struct {
 	ID             string       `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`

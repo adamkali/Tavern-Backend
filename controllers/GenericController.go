@@ -50,7 +50,6 @@ func (h *BaseHandler[Model]) SetAuthToken(token models.AuthToken) {
 }
 
 func (h *BaseHandler[Model]) authGetByID(w http.ResponseWriter, r *http.Request) {
-	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token
@@ -95,7 +94,6 @@ func (h *BaseHandler[Model]) authGetByID(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *BaseHandler[Model]) authUpdateOrInsert(w http.ResponseWriter, r *http.Request) {
-	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token
@@ -160,7 +158,6 @@ func (h *BaseHandler[Model]) authUpdateOrInsert(w http.ResponseWriter, r *http.R
 }
 
 func (h *BaseHandler[Model]) authDeleteByID(w http.ResponseWriter, r *http.Request) {
-	h.Model = h.Model.NewData().(Model)
 	logger := lib.New(r)
 
 	// check the header for the auth token
@@ -258,5 +255,15 @@ func (h *BaseHandler[Model]) ForceDELETE(w http.ResponseWriter, r *http.Request)
 		size := h.Response.SizeOf()
 		logger.Log(size, http.StatusMethodNotAllowed, "Method not allowed")
 		return
+	}
+}
+
+func (h *BaseHandler[Model]) Sanitize(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.Model = h.Model.NewData().(Model)
+		h.Response = models.DetailedResponse[Model]{}
+		h.AuthToken = h.AuthToken.NewData().(models.AuthToken)
+		h.ResponseList = models.DetailedResponseList[Model]{}
+		f(w, r)
 	}
 }

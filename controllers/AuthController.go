@@ -117,14 +117,7 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	c.H.AuthToken.ID = (generateUUID())
 	c.H.AuthToken.GenerateToken(req.Username, req.Password, req.UserEmail)
 	c.H.AuthToken.RoleFK = "4915B1FE0F7643F692FC25B3A60CC762"
-	// // get the role
-	// res = c.H.DB.Where("id = ?", c.H.AuthToken.RoleFK).First(&c.H.AuthToken.Role)
-	// if res.Error != nil {
-	// 	c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
-	// 	size := c.H.Response.SizeOf()
-	// 	logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
-	// 	return
-	// }
+
 	c.H.Response.Data = c.H.AuthToken
 	res = c.H.DB.Preload("Role").Create(&c.H.AuthToken)
 	if res.Error != nil {
@@ -133,6 +126,23 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
 		return
 	}
+	// create a new user for the token
+	user := models.User{
+		ID:       generateUUID(),
+		Username: req.Username,
+		Bio:      "Write a bio, to tell everyone about you!",
+	}
+	res = c.H.DB.Create(&user)
+	if res.Error != nil {
+		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+
+	// add the user to the token
+	c.H.AuthToken.UserID = user.ID
+
 	// Give the Token a role of "Not Verified" by default
 
 	// update the auth token with the role
@@ -219,6 +229,14 @@ func (c *AuthController) Verify(w http.ResponseWriter, r *http.Request) {
 
 	c.H.AuthToken.Active = true
 	c.H.AuthToken.RoleFK = "747A97752DA547348E21E93DAF207A43"
+	// get the new role from the database
+	res = c.H.DB.Where("id = ?", c.H.AuthToken.RoleFK).First(&c.H.AuthToken.Role)
+	if res.Error != nil {
+		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
 
 	// update the auth token with the role
 	res = c.H.DB.Preload("Role").Save(&c.H.AuthToken)

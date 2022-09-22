@@ -2,12 +2,8 @@ package lib
 
 import (
 	"Tavern-Backend/models"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"runtime"
 
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
 // Configuration Struct For Proper Security
@@ -36,56 +32,31 @@ type Configuration struct {
 }
 
 func LoadConfiguration(local bool) Configuration {
-	// if local then load .local.config
-	// else load the .prod.config
+	// use viper to load the configuration file
+	v := viper.New()
 
-	// get the operating system
-	// if windows set the locPath to .\\env\\.local.config
-	//and prodPath to  .\\env\\.prod.config
-	// else set the locPath to ./env/.local.config
-	// and prodPath to ./env/.prod.config
-	var locPath string
-	var prodPath string
-	if runtime.GOOS == "windows" {
-		locPath, _ = filepath.Abs(".\\env\\.local.config")
-		prodPath, _ = filepath.Abs(".\\env\\.prod.config")
+	// set the configuration file name
+	if local {
+		v.SetConfigName("local")
 	} else {
-		locPath, _ = filepath.Abs("./env/.local.config")
-		prodPath, _ = filepath.Abs("./env/.prod.config")
+		v.SetConfigName("prod")
+	}
+	v.SetConfigType("yaml")
+
+	// set the configuration file path
+	// it should be in ./env
+	v.AddConfigPath("./env")
+	err := v.ReadInConfig()
+	if err != nil {
+		panic(err)
 	}
 
 	var config Configuration
-
-	if local {
-		// get .local.config from the /env folder
-		// check the operating system and load the correct file.
-		yamlfile, err := os.Open(locPath)
-		if err != nil {
-			panic(err)
-		}
-		yamlbytes, err := ioutil.ReadAll(yamlfile)
-		if err != nil {
-			panic(err)
-		}
-		err = yaml.Unmarshal(yamlbytes, &config)
-		if err != nil {
-			println(err.Error())
-			panic(err)
-		}
-	} else {
-		yamlfile, err := os.Open(prodPath)
-		if err != nil {
-			panic(err)
-		}
-		yamlbytes, err := ioutil.ReadAll(yamlfile)
-		if err != nil {
-			panic(err)
-		}
-		err = yaml.Unmarshal(yamlbytes, &config)
-		if err != nil {
-			panic(err)
-		}
+	err = v.Unmarshal(&config)
+	if err != nil {
+		panic(err)
 	}
+
 	return config
 }
 

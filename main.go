@@ -43,8 +43,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// TODO: Refactor For Scalability
 	user := models.User{}
 	plot := models.Plot{}
 	character := models.Character{}
@@ -57,17 +55,10 @@ func main() {
 	rels := models.Relationship{}
 
 	err = db.AutoMigrate(
-		&user,
-		&plot,
-		&character,
-		&token,
-		&authTA,
-		&tags,
-		&pref,
-		&role,
-		&relationship,
-		&rels,
-	)
+		&user, &plot, &character,
+		&token, &authTA, &tags,
+		&pref, &role, &relationship,
+		&rels)
 	if err != nil {
 		panic(err)
 	}
@@ -93,58 +84,81 @@ func main() {
 		AllowedMethods:   config.Cors.AllowedMethods,
 	})
 
-	// TODO: Refactor For Scalability
+	// #region API Routes
 	entries := lib.LogEntries{}
 	entries.StartLogging()
 	http.Handle("/api/admin/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entries.RenderHtml(w)
 	}))
 	http.Handle(userController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(userController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			userController.H.Sanitize(userController.H.Controller))))
 	http.Handle(userController.H.AdmnAllPath,
-		cors.Handler(http.HandlerFunc(userController.AdminGetAll)))
+		cors.Handler(http.HandlerFunc(
+			userController.H.Sanitize(userController.AdminGetAll))))
 	http.Handle(userController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(userController.UserQueue)))
+		cors.Handler(http.HandlerFunc(
+			userController.H.Sanitize(userController.UserQueue))))
 	http.Handle(userController.H.AuthPath+"full",
-		cors.Handler(http.HandlerFunc(userController.GetAuthenticatedUser)))
+		cors.Handler(http.HandlerFunc(
+			userController.H.Sanitize(userController.GetAuthenticatedUser))))
 	http.Handle(userController.H.AuthPath+"full/",
-		cors.Handler(http.HandlerFunc(userController.AuthGetByIDFull)))
+		cors.Handler(http.HandlerFunc(
+			userController.H.Sanitize(userController.AuthGetByIDFull))))
 	http.Handle("/api/login",
-		cors.Handler(http.HandlerFunc(authController.Login)))
+		cors.Handler(http.HandlerFunc(
+			authController.H.Sanitize(authController.Login))))
 	http.Handle("/api/signup",
-		cors.Handler(http.HandlerFunc(authController.SignUp)))
+		cors.Handler(http.HandlerFunc(
+			authController.H.Sanitize(authController.SignUp))))
 	http.Handle("/api/verify",
-		cors.Handler(http.HandlerFunc(authController.Verify)))
+		cors.Handler(http.HandlerFunc(
+			authController.H.Sanitize(authController.Verify))))
 	http.Handle(characterController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(characterController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			characterController.H.Sanitize(characterController.H.Controller))))
 	http.Handle(characterController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(characterController.AuthGetAllCByUserID)))
+		cors.Handler(http.HandlerFunc(
+			characterController.H.Sanitize(characterController.AuthGetAllCByUserID))))
 	http.Handle(plotController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(plotController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			plotController.H.Sanitize(plotController.H.Controller))))
 	http.Handle(plotController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(plotController.AuthGetAllPByUserID)))
+		cors.Handler(http.HandlerFunc(
+			plotController.H.Sanitize(plotController.AuthGetAllPByUserID))))
 	http.Handle(relationshipController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(relationshipController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			relationshipController.H.Sanitize(relationshipController.H.Controller))))
 	http.Handle(tagController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(tagController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			tagController.H.Sanitize(tagController.H.Controller))))
 	http.Handle(tagController.H.AuthPath+"add",
-		cors.Handler(http.HandlerFunc(tagController.AuthPostTagToUser)))
+		cors.Handler(http.HandlerFunc(
+			tagController.H.Sanitize(tagController.AuthPostTagToUser))))
 	http.Handle(tagController.H.AuthAllPath+"add",
-		cors.Handler(http.HandlerFunc(tagController.AuthPostTagsToUser)))
+		cors.Handler(http.HandlerFunc(
+			tagController.H.Sanitize(tagController.AuthPostTagsToUser))))
 	http.Handle(tagController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(tagController.AuthGetTags)))
+		cors.Handler(http.HandlerFunc(
+			tagController.H.Sanitize(tagController.AuthGetTags))))
 	http.Handle(prefController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(prefController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			prefController.H.Sanitize(prefController.H.Controller))))
 	http.Handle(prefController.H.AuthPath+"add",
-		cors.Handler(http.HandlerFunc(prefController.AuthPostPlayerPrefrenceToUser)))
+		cors.Handler(http.HandlerFunc(
+			prefController.H.Sanitize(prefController.AuthPostPlayerPrefrenceToUser))))
 	http.Handle(prefController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(prefController.AuthGetPrefrences)))
+		cors.Handler(http.HandlerFunc(
+			prefController.H.Sanitize(prefController.AuthGetPrefrences))))
 	http.Handle(roleController.H.AdmnPath,
-		cors.Handler(http.HandlerFunc(roleController.AdminChangeRole)))
+		cors.Handler(http.HandlerFunc(
+			roleController.H.Sanitize(roleController.AdminChangeRole))))
 	http.Handle(relsController.H.AuthPath,
-		cors.Handler(http.HandlerFunc(relsController.H.Controller)))
+		cors.Handler(http.HandlerFunc(
+			relsController.H.Sanitize(relsController.H.Controller))))
 	http.Handle(relsController.H.AuthAllPath,
-		cors.Handler(http.HandlerFunc(relsController.AuthGetRelationships)))
+		cors.Handler(http.HandlerFunc(
+			relsController.H.Sanitize(relsController.AuthGetRelationships))))
 	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
-	// :ENDTODO
+	// #endregion
 }
