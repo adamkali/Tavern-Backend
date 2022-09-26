@@ -40,13 +40,14 @@ type Character struct {
 }
 
 type User struct {
-	ID              string          `json:"id" gorm:"column:id;type:varchar(32)"`
+	ID              string          `json:"id" gorm:"column:id;type:varchar(32);primaryKey"`
 	Username        string          `json:"username" gorm:"column:username;type:varchar(128) not null"`
 	Bio             string          `json:"bio" grom:"column:bio;type:text not null"`
 	Plots           []Plot          `json:"user_plots,omitempty"`
 	Characters      []Character     `json:"user_characters,omitempty"`
 	Tags            []Tag           `json:"user_tags,omitempty" gorm:"many2many:user_tags;"`
-	PlayerPrefrence PlayerPrefrence `json:"user_player_prefrences,omitempty" gorm:"foreignKey:ID;"`
+	PrefFK          string          `json:"-" gorm:"column:pref_fk"` // foreign key
+	PlayerPrefrence PlayerPrefrence `json:"pref" gorm:"foreignKey:PrefFK;refrences:ID"`
 
 	// GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
 }
@@ -63,7 +64,7 @@ type AuthToken struct {
 	UserEmail string `json:"user_email" gorm:"column:email;type:varchar(128) not null"`
 	AuthHash  string `json:"auth_hash" gorm:"column:auth_hash;type:varchar(128) not null"`
 	Active    bool   `json:"active" gorm:"column:active;type:tinyint(1) not null"`
-	RoleFK    string `json:"role_fk,omitempty"`
+	RoleFK    string `json:"role_fk,omitempty" gorm:"column:role_fk;type:varchar(32) not null"`
 	Role      Role   `json:"role" gorm:"foreignKey:RoleFK;refrences:ID"`
 }
 
@@ -270,15 +271,15 @@ func (u Character) GetID() string             { return u.ID }
 func (u UserRelationship) GetID() string      { return u.ID }
 func (u AuthToken) GetID() string             { return u.ID }
 func (u AuthTokenActivation) GetID() string   { return u.ID }
-func (u User) NewData() interface{}           { return &User{} }
-func (u Plot) NewData() interface{}           { return &Plot{} }
-func (u Character) NewData() interface{}      { return &Character{} }
+func (u User) NewData() interface{}           { return User{} }
+func (u Plot) NewData() interface{}           { return Plot{} }
+func (u Character) NewData() interface{}      { return Character{} }
 func (u UserRelationship) NewData() interface{} {
-	return &UserRelationship{}
+	return UserRelationship{}
 }
-func (u AuthToken) NewData() interface{} { return &AuthToken{} }
+func (u AuthToken) NewData() interface{} { return AuthToken{} }
 func (u AuthTokenActivation) NewData() interface{} {
-	return &AuthTokenActivation{}
+	return AuthTokenActivation{}
 }
 
 // implement the GetID and SetID functions for

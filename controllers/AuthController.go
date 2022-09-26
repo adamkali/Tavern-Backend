@@ -230,6 +230,8 @@ func (c *AuthController) Verify(w http.ResponseWriter, r *http.Request) {
 	c.H.AuthToken.Active = true
 	c.H.AuthToken.RoleFK = "747A97752DA547348E21E93DAF207A43"
 	// get the new role from the database
+	c.H.AuthToken.Role = models.Role{}
+	fmt.Printf("%s", c.H.AuthToken.RoleFK)
 	res = c.H.DB.Where("id = ?", c.H.AuthToken.RoleFK).First(&c.H.AuthToken.Role)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)

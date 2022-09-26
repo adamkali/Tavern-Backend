@@ -35,12 +35,12 @@ type TagsRequest struct {
 
 type PrefrenceRequest struct {
 	UserID string          `json:"user_id"`
-	Pref   PlayerPrefrence `json:"tag"`
+	Pref   PlayerPrefrence `json:"pref"`
 }
 
 type PrefrencesRequest struct {
 	UserID string            `json:"user_id"`
-	Prefs  []PlayerPrefrence `json:"tags"`
+	Prefs  []PlayerPrefrence `json:"prefs"`
 }
 
 type RoleRequest struct {

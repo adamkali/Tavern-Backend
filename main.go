@@ -87,8 +87,9 @@ func main() {
 	// #region API Routes
 	entries := lib.LogEntries{}
 	entries.StartLogging()
-	http.Handle("/api/admin/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entries.RenderHtml(w)
+	http.Handle("/api/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Send back "Alive and well"
+		w.Write([]byte("Alive and well."))
 	}))
 	http.Handle(userController.H.AuthPath,
 		cors.Handler(http.HandlerFunc(
@@ -96,13 +97,13 @@ func main() {
 	http.Handle(userController.H.AdmnAllPath,
 		cors.Handler(http.HandlerFunc(
 			userController.H.Sanitize(userController.AdminGetAll))))
-	http.Handle(userController.H.AuthAllPath,
+	http.Handle(userController.H.AuthAllPath+"/queue",
 		cors.Handler(http.HandlerFunc(
 			userController.H.Sanitize(userController.UserQueue))))
-	http.Handle(userController.H.AuthPath+"full",
+	http.Handle(userController.H.AuthPath+"/full",
 		cors.Handler(http.HandlerFunc(
 			userController.H.Sanitize(userController.GetAuthenticatedUser))))
-	http.Handle(userController.H.AuthPath+"full/",
+	http.Handle(userController.H.AuthPath+"/full/",
 		cors.Handler(http.HandlerFunc(
 			userController.H.Sanitize(userController.AuthGetByIDFull))))
 	http.Handle("/api/login",
@@ -132,10 +133,10 @@ func main() {
 	http.Handle(tagController.H.AuthPath,
 		cors.Handler(http.HandlerFunc(
 			tagController.H.Sanitize(tagController.H.Controller))))
-	http.Handle(tagController.H.AuthPath+"add",
+	http.Handle(tagController.H.AuthPath+"/add",
 		cors.Handler(http.HandlerFunc(
 			tagController.H.Sanitize(tagController.AuthPostTagToUser))))
-	http.Handle(tagController.H.AuthAllPath+"add",
+	http.Handle(tagController.H.AuthAllPath+"/add",
 		cors.Handler(http.HandlerFunc(
 			tagController.H.Sanitize(tagController.AuthPostTagsToUser))))
 	http.Handle(tagController.H.AuthAllPath,
@@ -144,7 +145,7 @@ func main() {
 	http.Handle(prefController.H.AuthPath,
 		cors.Handler(http.HandlerFunc(
 			prefController.H.Sanitize(prefController.H.Controller))))
-	http.Handle(prefController.H.AuthPath+"add",
+	http.Handle(prefController.H.AuthPath+"/add",
 		cors.Handler(http.HandlerFunc(
 			prefController.H.Sanitize(prefController.AuthPostPlayerPrefrenceToUser))))
 	http.Handle(prefController.H.AuthAllPath,
@@ -159,6 +160,8 @@ func main() {
 	http.Handle(relsController.H.AuthAllPath,
 		cors.Handler(http.HandlerFunc(
 			relsController.H.Sanitize(relsController.AuthGetRelationships))))
-	http.ListenAndServe(fmt.Sprintf("%s:%s", config.ServerHost, config.ServerPort), nil)
+	// Print the server host and port
+	fmt.Printf("%s:%d", config.Server.Host, config.Server.Port)
+	http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port), nil)
 	// #endregion
 }

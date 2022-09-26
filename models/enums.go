@@ -10,6 +10,8 @@ type Tag struct {
 type PlayerPrefrence struct {
 	ID         string `json:"id" gorm:"primaryKey; type:varchar(32);"`
 	Preference string `json:"pref_name" gorm:"column:pref_name;varchar(32) not null"`
+	Game       string `json:"game" gorm:"column:game;varchar(32) not null"`
+	Experience string `json:"experience" gorm:"column:experience;varchar(32) not null"`
 }
 
 type Relationship struct {

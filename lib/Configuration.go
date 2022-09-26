@@ -2,7 +2,9 @@ package lib
 
 import (
 	"Tavern-Backend/models"
+	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
 
@@ -10,14 +12,16 @@ import (
 type Configuration struct {
 	Database struct {
 		Host     string `yaml:"host"`
-		Port     string `yaml:"port"`
+		Port     int    `yaml:"port"`
 		Password string `yaml:"password"`
 		Username string `yaml:"username"`
 		Database string `yaml:"database"`
 	} `yaml:"database"`
-	ServerPort string `yaml:"server_port"`
-	ServerHost string `yaml:"server_host"`
-	Cors       struct {
+	Server struct {
+		Port int    `yaml:"port"`
+		Host string `yaml:"host"`
+	} `yaml:"server"`
+	Cors struct {
 		AllowedOrigins []string `yaml:"origins"`
 		AllowedMethods []string `yaml:"methods"`
 		AllowedHeaders []string `yaml:"headers"`
@@ -51,17 +55,31 @@ func LoadConfiguration(local bool) Configuration {
 		panic(err)
 	}
 
+	fmt.Printf("%s:%s\n", v.GetString("server_host"), v.GetString("server_port"))
+
 	var config Configuration
-	err = v.Unmarshal(&config)
+	var m map[string]interface{}
+	err = v.Unmarshal(&m)
 	if err != nil {
 		panic(err)
 	}
+
+	err = mapstructure.Decode(m, &config)
+	if err != nil {
+		for _, i := range v.AllKeys() {
+			fmt.Printf("%s\n", i)
+		}
+		fmt.Print("\n")
+		panic(err)
+	}
+
+	fmt.Printf("%v\n", config)
 
 	return config
 }
 
 func (config Configuration) GetDatabaseConnectionString() string {
-	return config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + config.Database.Port + ")/" + config.Database.Database + "?charset=utf8mb4&parseTime=True&loc=Local"
+	return config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + fmt.Sprintf("%d", config.Database.Port) + ")/" + config.Database.Database + "?charset=utf8mb4&parseTime=True&loc=Local"
 }
 
 func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {

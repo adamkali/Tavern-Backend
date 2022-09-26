@@ -50,9 +50,9 @@ func verifyAuthorizationToken(db gorm.DB, r *http.Request) (models.AuthToken, er
 	}
 
 	// split the token 'Bearer <token>'
-	splitToken := strings.Split(authToken, " ")
+	splitToken := strings.Split(authToken, " ")[1]
 
-	result := db.Where("token = ?", splitToken).First(&data)
+	result := db.Where("auth_hash = ?", splitToken).First(&data)
 	if result.Error != nil {
 		return models.AuthToken{}, result.Error
 	}

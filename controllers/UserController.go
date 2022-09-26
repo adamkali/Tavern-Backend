@@ -3,6 +3,8 @@ package controllers
 import (
 	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,6 +19,13 @@ func NewUserController(DB *gorm.DB) *UserController {
 		H: *NewHandler(DB, models.User{}, "User"),
 	}
 }
+
+// TODO: Make DB Requests To Be more convienient
+// like: c.H.DB.Preload("Prefrences").First(&user) ==> UserRepo.GetOne(id)
+//	 	c.H.DB.Preload("Prefrences").Find(&users) ==> UserRepo.GetAll()
+//   	In this way, we can make the code more readable and less error prone
+//		and more readable and implementable
+// :ENDTODO
 
 // #region Users
 func (c *UserController) AdminGetAll(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +69,16 @@ func (c *UserController) AdminGetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
+	/* TESTME: Test this function for all cases
+		* There will be the following cases:
+		* 1. User and The User found in the protoqueue have a relationship -> ROLL
+		* 2. The User found the User have no relationship -> ADD
+		* 3. The User found the User have a relationship BUT it is positive -> ADD
+		* 4. The User found the User have a relationship BUT it is negative -> ROLL
+		* 5. LATER ON: The User does not match the found User's preferences -> ROLL
+		* 6. LATER ON: The User matches the found User's preferences -> ADD
+	:ENDTESTME */
+
 	c.H.Model = models.User{}
 
 	logger := lib.New(r)
@@ -74,19 +93,8 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c.H.SetAuthToken(Auth)
-
-	// then check admin
-	if !c.H.AuthToken.IsAdmin() {
-		c.H.ResponseList.UDRWrite(w, http.StatusForbidden, "Forbidden", false)
-		size := c.H.ResponseList.SizeOf()
-		logger.Log(size, http.StatusForbidden, "Forbidden")
-		return
-	}
-
-	// First Set up a new queue of 20 users
-	// get 20 users from the database
 	var users []models.User
-	res := c.H.DB.Limit(20).Where(
+	res := c.H.DB.Limit(20).Preload("PlayerPrefrence").Where(
 		"id != ?", c.H.AuthToken.UserID,
 	).Find(&users)
 	if res.Error != nil {
@@ -95,47 +103,68 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 		logger.Log(size, http.StatusInternalServerError, res.Error.Error())
 		return
 	}
-
-	// make a go routine for each user
-	// make a wait group
-	// wait for all go routines to finish
+	println("\n\nStarting go routines")
 	var queue [20]chan models.User
+
 	errChan := make(chan error)
-	for i := range queue {
-		queue[i] = make(chan models.User)
+	for i := range users {
+		queue[i] = make(chan models.User, 1)
 	}
+	userSlice := len(users)
+
+	// make quit channels equal to userSlice
+	quit := make([]chan bool, userSlice)
+
 	var wg sync.WaitGroup
-	for i := 0; i < len(users); i++ {
-		wg.Add(1)
-		go func(user models.User) {
+	// Tell the 'wg' WaitGroup how many threads/goroutines
+	//   that are about to run concurrently.
+	wg.Add(userSlice)
+	fmt.Println("Running for loop…")
+	for i := 0; i < userSlice; i++ {
+		userInLoop := users[i]
+		quitInLoop := quit[i]
+		queueInLoop := queue[i]
+
+		go func(u models.User, q1 chan bool, q2 chan models.User) {
+
 			defer wg.Done()
-			var relat models.UserRelationship
-			res := c.H.DB.Where(
-				"Self = ? AND Other = ?",
-				user.ID, c.H.AuthToken.UserID,
-			).First(&relat)
+			// TODO: #5 Check for the prefrences and see if they are compatible\
+			// for example if the user is looking for a veteran in experience
+			// then we should check if c.H.AuthToken is a veteran or not
+			// and if not then we should not return it
+			// :ENDTODO
+			var rel models.UserRelationship
+			res := c.H.DB.Where("self_id = ? AND other_id = ?", c.H.AuthToken.UserID, u.ID).First(&rel)
+			if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
+				res := c.H.DB.Where("self_id = ? AND other_id = ?", u.ID, c.H.AuthToken.UserID).First(&rel)
+				if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
+					// add the user to the queue
+					q2 <- u
+					return
+				} else if res.Error != nil {
+					errChan <- res.Error
+					return
+				} else {
+					if !rel.Relationship.Negative {
+						q2 <- u
+						return
+					}
+				}
+			} else if res.Error != nil {
+				errChan <- res.Error
+				return
+			}
+			// Since all the checks have failed, the user is not in the queue
+			// so we should get a new user from the database and try again
+			var user models.User
+			res = c.H.DB.Where("id != ?", c.H.AuthToken.UserID).First(&user)
 			if res.Error != nil {
 				errChan <- res.Error
 				return
 			}
-			if !relat.Relationship.Negative {
-				queue[i] <- user
-			} else {
-				// get a new user from the database
-				// that is not the c.H.AuthToken.User
-				var newUser models.User
-				res := c.H.DB.Where(
-					"id != ? AND id != ?",
-					user.ID, c.H.AuthToken.UserID,
-				).First(&newUser)
-				if res.Error != nil {
-					errChan <- res.Error
-					return
-				}
-				// replace user with newUser
-				users[i] = newUser
-			}
-		}(users[i])
+			u = user
+			// This should loop back around and try again
+		}(userInLoop, quitInLoop, queueInLoop)
 	}
 	wg.Wait()
 
@@ -156,6 +185,7 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 		for _, q := range queue {
 			select {
 			case user := <-q:
+				fmt.Printf("Appending %s to Response\n", user.Username)
 				ret = append(ret, user)
 			default:
 				continue
@@ -229,8 +259,9 @@ func (c *UserController) AuthGetByIDFull(w http.ResponseWriter, r *http.Request)
 	}
 	c.H.SetAuthToken(Auth)
 
-	// get the user.ID from the url /api/auth/User/:id
-	id := strings.Split(r.URL.Path, "/")[4]
+	// get the user.ID from the url /api/auth/User/full/:id
+	id := strings.Split(r.URL.Path, "/")[5]
+	print(id)
 	if id == "" || len(id) != 32 {
 		c.H.Response.UDRWrite(w, http.StatusBadRequest, "Bad Request", false)
 		size := c.H.Response.SizeOf()
@@ -247,7 +278,8 @@ func (c *UserController) AuthGetByIDFull(w http.ResponseWriter, r *http.Request)
 		"Characters").Preload(
 		"Plots").Preload(
 		"Tags").Preload(
-		"PlayerPreferences").First(&m)
+		"PlayerPrefrence").First(&m)
+	fmt.Printf("Full User:%v\n", m)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
 		size := c.H.Response.SizeOf()

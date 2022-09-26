@@ -262,7 +262,7 @@ func (h *BaseHandler[Model]) Sanitize(f func(w http.ResponseWriter, r *http.Requ
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.Model = h.Model.NewData().(Model)
 		h.Response = models.DetailedResponse[Model]{}
-		h.AuthToken = h.AuthToken.NewData().(models.AuthToken)
+		h.AuthToken = models.AuthToken{}
 		h.ResponseList = models.DetailedResponseList[Model]{}
 		f(w, r)
 	}
