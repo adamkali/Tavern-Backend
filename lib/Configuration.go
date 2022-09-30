@@ -41,9 +41,9 @@ func LoadConfiguration(local bool) Configuration {
 
 	// set the configuration file name
 	if local {
-		v.SetConfigName("local")
+		v.SetConfigName(".local")
 	} else {
-		v.SetConfigName("prod")
+		v.SetConfigName(".prod")
 	}
 	v.SetConfigType("yaml")
 
