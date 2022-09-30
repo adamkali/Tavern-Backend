@@ -49,7 +49,7 @@ func LoadConfiguration(local bool) Configuration {
 
 	// set the configuration file path
 	// it should be in ./env
-	v.AddConfigPath("./TavernProfile.env")
+	v.AddConfigPath("./TavernProfile-env")
 	err := v.ReadInConfig()
 	if err != nil {
 		panic(err)
