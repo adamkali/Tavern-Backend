@@ -103,7 +103,6 @@ func (c *UserController) UserQueue(w http.ResponseWriter, r *http.Request) {
 		logger.Log(size, http.StatusInternalServerError, res.Error.Error())
 		return
 	}
-	println("\n\nStarting go routines")
 	var queue [20]chan models.User
 
 	errChan := make(chan error)

@@ -1,3 +1,6 @@
 [submodule "TavernProfile.env"]
 	path = TavernProfile.env
 	url = https://github.com/adamkali/TavernProfile.env.git
+[submodule "TavernProfile-env"]
+	path = TavernProfile-env
+	url = https://github.com/adamkali/TavernProfile-env.git
