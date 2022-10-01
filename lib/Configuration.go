@@ -78,8 +78,12 @@ func LoadConfiguration(local bool) Configuration {
 	return config
 }
 
-func (config Configuration) GetDatabaseConnectionString() string {
-	return config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + fmt.Sprintf("%d", config.Database.Port) + ")/" + config.Database.Database + "?charset=utf8mb4&parseTime=True&loc=Local"
+func (config Configuration) GetDatabaseConnectionString(local bool) string {
+	if local {
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.Database)
+	} else {
+		return fmt.Sprintf("%s:%s@tcp(172.17.0.1:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Port, config.Database.Database)
+	}
 }
 
 func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {

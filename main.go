@@ -29,15 +29,19 @@ func main() {
 	// else pass false.
 
 	var config lib.Configuration
+	var dsn string
 	if os.Args[1] == "dev" {
+
 		config = lib.LoadConfiguration(true)
+		fmt.Printf("%s\n", config.GetDatabaseConnectionString(true))
+		dsn = config.GetDatabaseConnectionString(true)
 	} else if os.Args[1] == "prod" {
 		config = lib.LoadConfiguration(false)
+		fmt.Printf("%s\n", config.GetDatabaseConnectionString(false))
+		dsn = config.GetDatabaseConnectionString(false)
 	} else {
 		panic("Invalid Argument")
 	}
-
-	dsn := config.GetDatabaseConnectionString()
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
