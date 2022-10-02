@@ -1,0 +1,17 @@
+# use latest version
+version: '3.7'
+
+services:
+  tavern-profile:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tavern-profile
+    ports:
+      - "10000:8080"
+    networks:
+      - tavern-network
+
+networks:
+  tavern-network:
+  

@@ -41,15 +41,15 @@ func LoadConfiguration(local bool) Configuration {
 
 	// set the configuration file name
 	if local {
-		v.SetConfigName(".local")
+		v.SetConfigName("local")
 	} else {
-		v.SetConfigName(".prod")
+		v.SetConfigName("prod")
 	}
 	v.SetConfigType("yaml")
 
 	// set the configuration file path
 	// it should be in ./env
-	v.AddConfigPath("./TavernProfile-env")
+	v.AddConfigPath("./env")
 	err := v.ReadInConfig()
 	if err != nil {
 		panic(err)
@@ -78,12 +78,8 @@ func LoadConfiguration(local bool) Configuration {
 	return config
 }
 
-func (config Configuration) GetDatabaseConnectionString(local bool) string {
-	if local {
-		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.Database)
-	} else {
-		return fmt.Sprintf("%s:%s@tcp(172.17.0.1:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Port, config.Database.Database)
-	}
+func (config Configuration) GetDatabaseConnectionString() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.Database)
 }
 
 func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {
