@@ -31,14 +31,6 @@ else
     MINOR=$((MINOR+1))
 fi
 
-
-# check if there is a VERSION.yaml file
-# if not make one
-if [ ! -f ./cmd/VERSION.yaml ]; then
-    echo "major: 0" > ./cmd/VERSION.yaml
-    echo "minor: 1" > ./cmd/VERSION.yaml
-fi
-
 # git add -A
 # git commit -m "$COMMIT_MESSAGE"
 # then checkout the Beor
