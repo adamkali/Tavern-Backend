@@ -5,7 +5,7 @@ COMMIT_MESSAGE=$1
 
 # check if there is a VERSION.yaml file
 # if not make one
-if [ ! -f ../cmd/VERSION.yaml ]; then
+if [ ! -f ./VERSION.yaml ]; then
     echo "major: 0" > ./VERSION.yaml
     echo "minor: 1" >> ./VERSION.yaml
 fi
