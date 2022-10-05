@@ -3,8 +3,7 @@
 name: Build Beor Docker Image and Upload
 on: 
   push:
-    branches:
-      - [ Beor ]
+    branches: [ Beor ]
 jobs:
   build:
     name: Build Beor Docker Image and Upload
