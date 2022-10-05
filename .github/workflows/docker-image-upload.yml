@@ -3,12 +3,11 @@
 name: Build Beor Docker Image and Upload
 on: 
   push:
-    branches:
-      - [ Beor ]
+    branches: [ Beor ]
 jobs:
   build:
     name: Build Beor Docker Image and Upload
-    runs-on: alpine-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
