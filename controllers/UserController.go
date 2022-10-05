@@ -224,7 +224,7 @@ func (c *UserController) GetAuthenticatedUser(w http.ResponseWriter, r *http.Req
 		"Characters").Preload(
 		"Plots").Preload(
 		"Tags").Preload(
-		"PlayerPreferences").First(&m)
+		"PlayerPrefrence").First(&m)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
 		size := c.H.Response.SizeOf()

@@ -6,6 +6,10 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
+
+	// aws
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 )
 
 // Configuration Struct For Proper Security
@@ -33,6 +37,11 @@ type Configuration struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 	} `yaml:"email"`
+	AWS struct {
+		Region string `yaml:"region"`
+		Key    string `yaml:"key"`
+		Secret string `yaml:"secret"`
+	} `yaml:"aws"`
 }
 
 func LoadConfiguration(local bool) Configuration {
@@ -79,7 +88,13 @@ func LoadConfiguration(local bool) Configuration {
 }
 
 func (config Configuration) GetDatabaseConnectionString() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", config.Database.Username, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.Database)
+	// Create the DSN string for the database connection.
+	// it should have a 500ms timeout.
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=5s", config.Database.Username, config.Database.Password, config.Database.Host, config.Database.Port, config.Database.Database)
+	// print the dsn string
+	fmt.Println("\nDSN: " + dsn + "\n")
+
+	return dsn
 }
 
 func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {
@@ -88,5 +103,12 @@ func (config Configuration) GetEmailConfig() models.AuthEmailConfiglette {
 		Port:     config.Email.Port,
 		Username: config.Email.Username,
 		Password: config.Email.Password,
+	}
+}
+
+func (config Configuration) GetAWSConfig() aws.Config {
+	return aws.Config{
+		Region:      aws.String(config.AWS.Region),
+		Credentials: credentials.NewStaticCredentials(config.AWS.Key, config.AWS.Secret, ""),
 	}
 }

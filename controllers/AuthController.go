@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"Tavern-Backend/awslib"
 	"Tavern-Backend/lib"
 	"Tavern-Backend/models"
 	"encoding/json"
@@ -12,10 +13,10 @@ import (
 
 type AuthController struct {
 	H BaseHandler[models.AuthToken]
-	C models.AuthEmailConfiglette
+	C lib.Configuration
 }
 
-func NewAuthController(DB *gorm.DB, C models.AuthEmailConfiglette) *AuthController {
+func NewAuthController(DB *gorm.DB, C lib.Configuration) *AuthController {
 	return &AuthController{
 		H: *NewHandler(DB, models.AuthToken{}, "auth"),
 		C: C,
@@ -118,42 +119,24 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	c.H.AuthToken.GenerateToken(req.Username, req.Password, req.UserEmail)
 	c.H.AuthToken.RoleFK = "4915B1FE0F7643F692FC25B3A60CC762"
 
-	c.H.Response.Data = c.H.AuthToken
-	res = c.H.DB.Preload("Role").Create(&c.H.AuthToken)
+	var pref models.PlayerPrefrence
+	res = c.H.DB.Where("pref_name = ?", "Please Add a New Prefrence").First(&pref)
 	if res.Error != nil {
-		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
-		size := c.H.Response.SizeOf()
-		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
-		return
-	}
-	// create a new user for the token
-	user := models.User{
-		ID:       generateUUID(),
-		Username: req.Username,
-		Bio:      "Write a bio, to tell everyone about you!",
-	}
-	res = c.H.DB.Create(&user)
-	if res.Error != nil {
-		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
+		c.H.Response.UDRWrite(w, http.StatusInternalServerError, "Failed to fetch prefrence:"+res.Error.Error(), false)
 		size := c.H.Response.SizeOf()
 		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
 		return
 	}
 
+	user := models.User{
+		ID:              generateUUID(),
+		Username:        req.Username,
+		Bio:             "Write a bio, to tell everyone about you!",
+		PlayerPrefrence: pref,
+		PrefFK:          pref.ID,
+	}
 	// add the user to the token
 	c.H.AuthToken.UserID = user.ID
-
-	// Give the Token a role of "Not Verified" by default
-
-	// update the auth token with the role
-	res = c.H.DB.Save(&c.H.AuthToken)
-	if res.Error != nil {
-		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
-		size := c.H.Response.SizeOf()
-		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
-		return
-	}
-
 	// make a new auth activation token
 	aat := models.AuthTokenActivation{
 		ID:        generateUUID(),
@@ -161,6 +144,23 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		AuthEmail: req.UserEmail,
 		AuthID:    c.H.AuthToken.ID,
 	}
+
+	ret, err := awslib.SendEmail(aat, c.C)
+	if err != nil {
+		c.H.Response.ConsumeError(w, err, http.StatusInternalServerError)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", err)
+		return
+	}
+
+	res = c.H.DB.Preload("Role").Create(&c.H.AuthToken)
+	if res.Error != nil {
+		c.H.Response.UDRWrite(w, http.StatusInternalServerError, "Failed to create Auth Token:"+res.Error.Error(), false)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+
 	res = c.H.DB.Create(&aat)
 	if res.Error != nil {
 		c.H.Response.ConsumeError(w, res.Error, http.StatusInternalServerError)
@@ -168,10 +168,19 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
 		return
 	}
-	aat.SendRegistrationEmail(c.C)
+
+	res = c.H.DB.Preload("PlayerPrefrence").Create(&user)
+	if res.Error != nil {
+		c.H.Response.UDRWrite(w, http.StatusInternalServerError, "Failed to create User:"+res.Error.Error(), false)
+		size := c.H.Response.SizeOf()
+		logger.Log(size, http.StatusInternalServerError, "Internal Server Error", res.Error)
+		return
+	}
+
+	c.H.Response.Data = c.H.AuthToken
 
 	// OK Response
-	c.H.Response.OK(w, c.H.AuthToken)
+	c.H.Response.UDRWrite(w, http.StatusOK, ret, true)
 	size := c.H.Response.SizeOf()
 	logger.Log(size, http.StatusOK, "OK")
 }

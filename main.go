@@ -56,18 +56,14 @@ func main() {
 	relationship := models.UserRelationship{}
 	rels := models.Relationship{}
 
-	err = db.AutoMigrate(
-		&user, &plot, &character,
-		&token, &authTA, &tags,
-		&pref, &role, &relationship,
-		&rels)
+	err = db.AutoMigrate(&user, &plot, &character, &token, &authTA, &tags, &pref, &role, &relationship, &rels)
 	if err != nil {
 		panic(err)
 	}
 
 	// Instantiate the controllers
 	userController := controllers.NewUserController(db)
-	authController := controllers.NewAuthController(db, models.AuthEmailConfiglette(config.Email))
+	authController := controllers.NewAuthController(db, config)
 	plotController := controllers.NewPlotController(db)
 	characterController := controllers.NewCharacterController(db)
 	relationshipController := controllers.NewRelationshipController(db)
@@ -164,6 +160,9 @@ func main() {
 			relsController.H.Sanitize(relsController.AuthGetRelationships))))
 	// Print the server host and port
 	fmt.Printf("%s:%d", config.Server.Host, config.Server.Port)
-	http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port), nil)
+	err = http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port), nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 	// #endregion
 }
