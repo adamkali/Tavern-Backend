@@ -9,6 +9,63 @@ if [ -z "$COMMIT_MESSAGE" ]; then
     exit 1
 fi
 
+# create a quit function
+quit() {
+    echo "Build failed"
+    exit 1
+}
+
+# create a git function and make sure there 
+# are no errors
+# $1 is the commit message
+# throw away any output
+gitstep() {
+    # git add -A
+    # git commit -m "$COMMIT_MESSAGE"
+    # then checkout the Beor and throw away output to avoid printing it
+    git checkout Beor                   2> /dev/null
+    git merge main                      2> /dev/null
+
+    git add -A                          2> /dev/null
+    git commit -m "$COMMIT_MESSAGE"     2> /dev/null 
+
+    # git push origin beor
+    git push origin Beor                2> /dev/null 
+}
+
+versionstep() {
+# check if there is a VERSION.yaml file
+# if not make one throw away any output to the terminal
+    if [ ! -f ./cmd/VERSION.yaml ]; then
+        echo "major: 0" >  ./cmd/VERSION.yaml       2> /dev/null
+        echo "minor: 1" >> ./cmd/VERSION.yaml       2> /dev/null
+    fi
+    
+    # check if -M is set
+    if [ "$2" = "-M" ]; then
+        # increment major version
+        echo "Incrementing major version"
+        # Get the current major version
+        MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
+        # Increment the major version
+        MAJOR=$((MAJOR+1))
+        # Set the minor version to 0
+        MINOR=0
+    else
+        # increment minor version
+        echo "Incrementing minor version"
+        # Get the current major version
+        MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
+        # Get the current minor version
+        MINOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=minor: ).*')
+        # Increment the minor version
+        MINOR=$((MINOR+1))
+    fi
+    
+    # update the VERSION.yaml file and throw away any output to the terminal
+    echo "major: $MAJOR" >  ./cmd/VERSION.yaml      2> /dev/null
+    echo "minor: $MINOR" >> ./cmd/VERSION.yaml      2> /dev/null
+}
 
 # Setup a progress bar
 PUR='\033[0;35m'
@@ -32,65 +89,22 @@ PROG4="[${BLU}##############################${PUR}=>--------${NCR}] 80%"
 PROG5="[${BLU}######################################${PUR}=>${NCR}] 100%"
 
 echo -e "\r${PUR}${STAGE0}${NC}${PROG0}"
-# git add -A
-# git commit -m "$COMMIT_MESSAGE"
-# then checkout the Beor and throw away output to avoid printing it
-git checkout Beor 2>&1 > /dev/null
-git merge main 2>&1 > /dev/null
-
-git add -A 2>&1 > /dev/null
-git commit -m "$COMMIT_MESSAGE" 2>&1 > /dev/null
-
-# git push origin beor
-git push origin Beor 2>&1 > /dev/null
-
+# do the git stuff and if there is an error, quit
+gitstep || quit
 echo -e "$\r{PUR}${STAGE1}${NCR}${PROG1}"
-
-# check if there is a VERSION.yaml file
-# if not make one throw away any output to the terminal
-if [ ! -f ./cmd/VERSION.yaml ]; then
-    echo "major: 0" >  ./cmd/VERSION.yaml 2>&1 > /dev/null
-    echo "minor: 1" >> ./cmd/VERSION.yaml 2>&1 > /dev/null
-fi
-
-# check if -M is set
-if [ "$2" = "-M" ]; then
-    # increment major version
-    echo "Incrementing major version"
-    # Get the current major version
-    MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
-    # Increment the major version
-    MAJOR=$((MAJOR+1))
-    # Set the minor version to 0
-    MINOR=0
-else
-    # increment minor version
-    echo "Incrementing minor version"
-    # Get the current major version
-    MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
-    # Get the current minor version
-    MINOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=minor: ).*')
-    # Increment the minor version
-    MINOR=$((MINOR+1))
-fi
-
-# update the VERSION.yaml file and throw away any output to the terminal
-echo "major: $MAJOR" >  ./cmd/VERSION.yaml 2>&1 > /dev/null
-echo "minor: $MINOR" >> ./cmd/VERSION.yaml 2>&1 > /dev/null
-
+versionstep || quit
 # build the docker image and throw away any output to the terminal
 echo -e "\r${PUR}${STAGE2}${NCR}${PROG2}"
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com 2>&1 > /dev/null
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com 2>&1 > /dev/null || quit
 
 echo -e "\r${PUR}${STAGE3}${NCR}${PROG3}"
-docker build -t tavern-profile-beor . 2>&1 > /dev/null
+docker build -t tavern-profile-beor . 2>&1 > /dev/null || quit
 
 echo -e "\r${PUR}${STAGE4}${NCR}${PROG4}"
-docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null
+docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null || quit
 
 echo -e "\r${PUR}${STAGE5}${NCR}${PROG5}"
-docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null
-
+docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null || quit
 
 # git checkout main
 git checkout main 2>&1 > /dev/null
