@@ -43,8 +43,6 @@ versionstep() {
     
     # check if -M is set
     if [ "$2" = "-M" ]; then
-        # increment major version
-        echo "Incrementing major version"
         # Get the current major version and increment it
         MAJOR=$(cat ./cmd/VERSION.yaml | grep major | cut -d " " -f 2)
         # Increment the major version
@@ -53,7 +51,7 @@ versionstep() {
         MINOR=0
     else
         # increment minor version
-        echo "Incrementing minor version"
+
         #save the major version
         MAJOR=$(cat ./cmd/VERSION.yaml | grep major | cut -d " " -f 2)
         # Get the current minor version and increment it
@@ -68,8 +66,10 @@ versionstep() {
 }
 
 # Setup a progress bar
+# blb is blue background
 PUR='\033[0;35m'
 BLU='\033[0;34m'
+BLB='\033[44m'
 GRE='\033[0;32m'
 NCR='\033[0m' # No Color
 
@@ -82,33 +82,33 @@ STAGE5="Pushing docker image to ECR"
 STAGE6="COMPLETE!"
 
 PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
-PROG1="[${BLU}######${PUR}=>--------------------------------${NCR}] 20%"
-PROG2="[${BLU}##############${PUR}=>------------------------${NCR}] 40%"
-PROG3="[${BLU}######################${PUR}=>----------------${NCR}] 60%"
-PROG4="[${BLU}##############################${PUR}=>--------${NCR}] 80%"
-PROG5="[${BLU}######################################${PUR}=>${NCR}] 100%"
+PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"
+PROG2="[${BLB}              ${BLU}=>${PUR}------------------------${NCR}] 40%"
+PROG3="[${BLB}                      ${BLU}=>${PUR}----------------${NCR}] 60%"
+PROG4="[${BLB}                              ${BLU}=>${PUR}--------${NCR}] 80%"
+PROG5="[${BLB}                                      ${BLU}=>${PUR}${NCR}] 100%"
 
-echo -e "${PUR}${STAGE0}${NC}${PROG0}\r"
+echo -ne "${PUR}${STAGE0}${NC}${PROG0}\r"
 # do the git stuff and if there is an error, quit
 gitstep || quit
-echo -e "${PUR}${STAGE1}${NCR}${PROG1}\r"
+echo -ne "${PUR}${STAGE1}${NCR}${PROG1}\r"
 versionstep || quit
 # build the docker image and throw away any output to the terminal
-echo -e "${PUR}${STAGE2}${NCR}${PROG2}\r"
+echo -ne "${PUR}${STAGE2}${NCR}${PROG2}\r"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com &> /dev/null || quit
 
-echo -e "${PUR}${STAGE3}${NCR}${PROG3}\r"
+echo -ne "${PUR}${STAGE3}${NCR}${PROG3}\r"
 docker build -t tavern-profile-beor . &> /dev/null || quit
 # docker build -t tavern-profile-beor .  || quit
 
-echo -e "${PUR}${STAGE4}${NCR}${PROG4}\r"
+echo -ne "${PUR}${STAGE4}${NCR}${PROG4}\r"
 # docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR || quit
 
-echo -e "${PUR}${STAGE5}${NCR}${PROG5}\r"
+echo -ne "${PUR}${STAGE5}${NCR}${PROG5}\r"
 docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
 # git checkout main
 git checkout main &> /dev/null
 
-echo -e "${GRE}$STAGE6${NCR}"
+echo -ne "${GRE}$STAGE6${NCR}"
