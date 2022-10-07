@@ -45,8 +45,8 @@ versionstep() {
     if [ "$2" = "-M" ]; then
         # increment major version
         echo "Incrementing major version"
-        # Get the current major version
-        MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
+        # Get the current major version and increment it
+        MAJOR=$(cat ./cmd/VERSION.yaml | grep major | cut -d " " -f 2)
         # Increment the major version
         MAJOR=$((MAJOR+1))
         # Set the minor version to 0
@@ -54,10 +54,10 @@ versionstep() {
     else
         # increment minor version
         echo "Incrementing minor version"
-        # Get the current major version
-        MAJOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=major: ).*')
-        # Get the current minor version
-        MINOR=$(cat ./cmd/VERSION.yaml | grep -oP '(?<=minor: ).*')
+        #save the major version
+        MAJOR=$(cat ./cmd/VERSION.yaml | grep major | cut -d " " -f 2)
+        # Get the current minor version and increment it
+        MINOR=$(cat ./cmd/VERSION.yaml | grep minor | cut -d " " -f 2)
         # Increment the minor version
         MINOR=$((MINOR+1))
     fi
@@ -88,22 +88,22 @@ PROG3="[${BLU}######################${PUR}=>----------------${NCR}] 60%"
 PROG4="[${BLU}##############################${PUR}=>--------${NCR}] 80%"
 PROG5="[${BLU}######################################${PUR}=>${NCR}] 100%"
 
-echo -e "\r${PUR}${STAGE0}${NC}${PROG0}"
+echo -e "${PUR}${STAGE0}${NC}${PROG0}\r"
 # do the git stuff and if there is an error, quit
 gitstep || quit
-echo -e "$\r{PUR}${STAGE1}${NCR}${PROG1}"
+echo -e "${PUR}${STAGE1}${NCR}${PROG1}\r"
 versionstep || quit
 # build the docker image and throw away any output to the terminal
-echo -e "\r${PUR}${STAGE2}${NCR}${PROG2}"
+echo -e "${PUR}${STAGE2}${NCR}${PROG2}\r"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com &> /dev/null || quit
 
-echo -e "\r${PUR}${STAGE3}${NCR}${PROG3}"
+echo -e "${PUR}${STAGE3}${NCR}${PROG3}\r"
 docker build -t tavern-profile-beor . &> /dev/null || quit
 
-echo -e "\r${PUR}${STAGE4}${NCR}${PROG4}"
+echo -e "${PUR}${STAGE4}${NCR}${PROG4}\r"
 docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
-echo -e "\r${PUR}${STAGE5}${NCR}${PROG5}"
+echo -e "${PUR}${STAGE5}${NCR}${PROG5}\r"
 docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
 # git checkout main
