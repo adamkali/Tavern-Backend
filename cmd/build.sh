@@ -98,7 +98,8 @@ echo -e "${PUR}${STAGE2}${NCR}${PROG2}\r"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com &> /dev/null || quit
 
 echo -e "${PUR}${STAGE3}${NCR}${PROG3}\r"
-docker build -t tavern-profile-beor . &> /dev/null || quit
+# docker build -t tavern-profile-beor . &> /dev/null || quit
+docker build -t tavern-profile-beor .|| quit
 
 echo -e "${PUR}${STAGE4}${NCR}${PROG4}\r"
 docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
