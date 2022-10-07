@@ -46,7 +46,7 @@ type User struct {
 	Plots           []Plot          `json:"user_plots,omitempty"`
 	Characters      []Character     `json:"user_characters,omitempty"`
 	Tags            []Tag           `json:"user_tags,omitempty" gorm:"many2many:user_tags;"`
-	PrefFK          string          `json:"-" gorm:"column:pref_fk"` // foreign key
+	PrefFK          string          `json:"pref_fk" gorm:"column:pref_fk"` // foreign key
 	PlayerPrefrence PlayerPrefrence `json:"pref" gorm:"foreignKey:PrefFK;refrences:ID"`
 
 	// GroupID string `json:"group_fk,omitempty" gorm:"foreignKey:GroupID;refernces:ID"`
@@ -330,7 +330,7 @@ func (u Characters) SetID(id string) {
 	}
 }
 
-//Tags
+// Tags
 func (u Tags) GetID() string {
 	var ret []string
 	for _, v := range u.Tags {
@@ -346,7 +346,7 @@ func (u Tags) SetID(id string) {
 	}
 }
 
-//Player Preference
+// Player Preference
 func (u PlayerPrefrences) GetID() string {
 	var ret []string
 	for _, v := range u.PlayerPrefrences {
@@ -362,7 +362,7 @@ func (u PlayerPrefrences) SetID(id string) {
 	}
 }
 
-//Relationships
+// Relationships
 func (u Relationships) GetID() string {
 	var ret []string
 	for _, v := range u.Relationships {
@@ -378,7 +378,7 @@ func (u Relationships) SetID(id string) {
 	}
 }
 
-//UserRelationships
+// UserRelationships
 func (u UserRelationships) GetID() string {
 	var ret []string
 	for _, v := range u.UserRelationships {

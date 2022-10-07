@@ -5,10 +5,10 @@
 FROM golang:1.18-alpine AS builder
 
 # make the directory for the source code
-RUN mkdir -p ./go/src/Tavern-Backend/env/
+RUN mkdir -p ./go/src/Tavern-Backend/env/ && mkdir -p ./Files/env
 
 # copy go.mod and go.sum to the working directory
-COPY ./Tavern-Backend/go.* /go/src/Tavern-Backend/
+COPY ./go.* /go/src/Tavern-Backend/
 
 # set the working directory to be in the GOROOT directory
 WORKDIR /go/src/Tavern-Backend
@@ -19,8 +19,8 @@ RUN go mod download
 WORKDIR /
 
 # copy the source code to the working directory
-COPY ./Tavern-Backend/ /go/src/Tavern-Backend/
-COPY ./Tavern-Backend/env/ /Files/env/
+COPY . /go/src/Tavern-Backend/
+COPY ./env /Files/env/
 
 WORKDIR /go/src/Tavern-Backend
 
