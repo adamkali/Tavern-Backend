@@ -23,22 +23,22 @@ gitstep() {
     # git add -A
     # git commit -m "$COMMIT_MESSAGE"
     # then checkout the Beor and throw away output to avoid printing it
-    git checkout Beor                   2> /dev/null
-    git merge main                      2> /dev/null
+    git checkout Beor                   &> /dev/null
+    git merge main                      &> /dev/null
 
-    git add -A                          2> /dev/null
-    git commit -m "$COMMIT_MESSAGE"     2> /dev/null 
+    git add -A                          &> /dev/null
+    git commit -m "$COMMIT_MESSAGE"     &> /dev/null 
 
     # git push origin beor
-    git push origin Beor                2> /dev/null 
+    git push origin Beor                &> /dev/null 
 }
 
 versionstep() {
 # check if there is a VERSION.yaml file
 # if not make one throw away any output to the terminal
     if [ ! -f ./cmd/VERSION.yaml ]; then
-        echo "major: 0" >  ./cmd/VERSION.yaml       2> /dev/null
-        echo "minor: 1" >> ./cmd/VERSION.yaml       2> /dev/null
+        echo "major: 0" >  ./cmd/VERSION.yaml       &> /dev/null
+        echo "minor: 1" >> ./cmd/VERSION.yaml       &> /dev/null
     fi
     
     # check if -M is set
@@ -63,8 +63,8 @@ versionstep() {
     fi
     
     # update the VERSION.yaml file and throw away any output to the terminal
-    echo "major: $MAJOR" >  ./cmd/VERSION.yaml      2> /dev/null
-    echo "minor: $MINOR" >> ./cmd/VERSION.yaml      2> /dev/null
+    echo "major: $MAJOR" >  ./cmd/VERSION.yaml      &> /dev/null
+    echo "minor: $MINOR" >> ./cmd/VERSION.yaml      &> /dev/null
 }
 
 # Setup a progress bar
@@ -95,18 +95,18 @@ echo -e "$\r{PUR}${STAGE1}${NCR}${PROG1}"
 versionstep || quit
 # build the docker image and throw away any output to the terminal
 echo -e "\r${PUR}${STAGE2}${NCR}${PROG2}"
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com 2>&1 > /dev/null || quit
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com &> /dev/null || quit
 
 echo -e "\r${PUR}${STAGE3}${NCR}${PROG3}"
-docker build -t tavern-profile-beor . 2>&1 > /dev/null || quit
+docker build -t tavern-profile-beor . &> /dev/null || quit
 
 echo -e "\r${PUR}${STAGE4}${NCR}${PROG4}"
-docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null || quit
+docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
 echo -e "\r${PUR}${STAGE5}${NCR}${PROG5}"
-docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR 2>&1 > /dev/null || quit
+docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
 # git checkout main
-git checkout main 2>&1 > /dev/null
+git checkout main &> /dev/null
 
 echo -e "${GRE}$STAGE6${NCR}"
