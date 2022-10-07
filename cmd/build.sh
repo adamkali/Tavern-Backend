@@ -81,7 +81,7 @@ STAGE4="Tagging docker image"
 STAGE5="Pushing docker image to ECR"
 STAGE6="COMPLETE!"
 
-PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
+PROG0="[${BLU}=>${PUR}--------------------------------------------${NCR}] 0%"
 PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"
 PROG2="[${BLB}              ${BLU}=>${PUR}------------------------${NCR}] 40%"
 PROG3="[${BLB}                      ${BLU}=>${PUR}----------------${NCR}] 60%"
