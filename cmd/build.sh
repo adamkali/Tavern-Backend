@@ -77,14 +77,14 @@ GRE='\033[0;32m'
 GRB='\033[42m'
 NCR='\033[0m' # No Color
 
-STAGE0=" 🌳 Pulling main brach from git\t\t\t\t"
-STAGE1=" 🔁 Updating VERSION\t\t\t\t"
-STAGE2=" 📦 Logging into AWS ECR\t\t\t\t"
-STAGE3=" 🧱 Building docker image\t\t\t\t"
-STAGE4=" 🏷 Tagging docker image\t\t\t\t"
-STAGE5=" 📌 Pushing docker image to ECR\t\t\t\t"
-STAGE6=" 🏡 Bringing you back to the main branch\t\t\t\t"
-STAGEC=" 🐳 COMPLETE!\t\t\t\t"
+STAGE0=" 🌳 Pulling main brach from git\n"
+STAGE1=" 🔁 Updating VERSION\n"
+STAGE2=" 📦 Logging into AWS ECR\n"
+STAGE3=" 🧱 Building docker image\n"
+STAGE4=" 🏷 Tagging docker image\n"
+STAGE5=" 📌 Pushing docker image to ECR\n"
+STAGE6=" 🏡 Bringing you back to the main branch\n"
+STAGEC=" 🐳 COMPLETE!\n"
 
 PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
 PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"
@@ -105,8 +105,8 @@ echo -ne "${PUR}${STAGE2}${NCR}${PROG2}\r"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com &> /dev/null || quit
 
 echo -ne "${PUR}${STAGE3}${NCR}${PROG3}\r"
-docker build -t tavern-profile-beor . &> /dev/null || quit
-# docker build -t tavern-profile-beor .  || quit
+# docker build -t tavern-profile-beor . &> /dev/null || quit
+docker build -t tavern-profile-beor .  || quit
 
 echo -ne "${PUR}${STAGE4}${NCR}${PROG4}\r"
 # docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
