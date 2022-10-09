@@ -23,9 +23,9 @@ quit() {
 # $1 is the commit message
 # throw away any output
 gitstep() {
-    git add -A
-    git commit -m "$COMMIT_MESSAGE"
-    git push
+    git add -A                          &> /dev/null
+    git commit -m "$COMMIT_MESSAGE"     &> /dev/null
+    git push origin master              &> /dev/null
     # then checkout the Beor and throw away output to avoid printing it
     git checkout Beor                   &> /dev/null
     git merge main                      &> /dev/null
