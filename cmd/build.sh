@@ -77,14 +77,14 @@ GRE='\033[0;32m'
 GRB='\033[42m'
 NCR='\033[0m' # No Color
 
-STAGE0=" 🌳 Pulling main brach from git\n"
-STAGE1=" 🔁 Updating VERSION\n"
-STAGE2=" 📦 Logging into AWS ECR\n"
-STAGE3=" 🧱 Building docker image\n"
-STAGE4=" 🏷 Tagging docker image\n"
-STAGE5=" 📌 Pushing docker image to ECR\n"
-STAGE6=" 🏡 Bringing you back to the main branch\n"
-STAGEC=" 🐳 COMPLETE!\n"
+STAGE0=" 🌳 Pulling main brach from git          \n"
+STAGE1=" 🔁 Updating VERSION                     \n"
+STAGE2=" 📦 Logging into AWS ECR                 \n"
+STAGE3=" 🧱 Building docker image                \n"
+STAGE4=" 🏷 Tagging docker image                 \n"
+STAGE5=" 📌 Pushing docker image to ECR          \n"
+STAGE6=" 🏡 Bringing you back to the main branch \n"
+STAGEC=" 🐳 COMPLETE!                            \n"
 
 PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
 PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"

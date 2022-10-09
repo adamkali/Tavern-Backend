@@ -36,11 +36,12 @@ FROM alpine:latest
 
 WORKDIR /root/
 RUN mkdir -p /env
+RUN mkdir -p ./lib/log
 # RUN from the build stage list the files in the directory
 RUN ls -la
 COPY --from=builder /Files/ .
 # Make a file to hold logs 
-RUN touch /root/lib/log/tavern.log
+RUN touch ./lib/log/tavern.log
 # expose the port 8000
 EXPOSE 8000
 
