@@ -2,6 +2,9 @@
 
 # Get the commit message
 COMMIT_MESSAGE=$1
+TAVERN_TASK=/Users/adamkalinowski/Programming/Tavern/TavernProfile/Tavern-Backend/fargate-task.json
+REGION=us-east-1
+
 
 # if there is no comit message, throw an error and quit out
 if [ -z "$COMMIT_MESSAGE" ]; then
@@ -71,22 +74,26 @@ PUR='\033[0;35m'
 BLU='\033[0;34m'
 BLB='\033[44m'
 GRE='\033[0;32m'
+GRB='\033[42m'
 NCR='\033[0m' # No Color
 
-STAGE0="Pulling main brach from git"
-STAGE1="Updating VERSION"
-STAGE2="Logging into AWS ECR"
-STAGE3="Building docker image"
-STAGE4="Tagging docker image"
-STAGE5="Pushing docker image to ECR"
-STAGE6="COMPLETE!"
+STAGE0=" 🌳 Pulling main brach from git\t\t\t\t"
+STAGE1=" 🔁 Updating VERSION\t\t\t\t"
+STAGE2=" 📦 Logging into AWS ECR\t\t\t\t"
+STAGE3=" 🧱 Building docker image\t\t\t\t"
+STAGE4=" 🏷 Tagging docker image\t\t\t\t"
+STAGE5=" 📌 Pushing docker image to ECR\t\t\t\t"
+STAGE6=" 🏡 Bringing you back to the main branch\t\t\t\t"
+STAGEC=" 🐳 COMPLETE!\t\t\t\t"
 
 PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
 PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"
 PROG2="[${BLB}              ${BLU}=>${PUR}------------------------${NCR}] 40%"
 PROG3="[${BLB}                      ${BLU}=>${PUR}----------------${NCR}] 60%"
-PROG4="[${BLB}                              ${BLU}=>${PUR}--------${NCR}] 80%"
-PROG5="[${BLB}                                      ${BLU}=>${PUR}${NCR}] 100%"
+PROG4="[${BLB}                          ${BLU}=>${PUR}------------${NCR}] 70%"
+PROG5="[${BLB}                              ${BLU}=>${PUR}--------${NCR}] 80%"
+PROG6="[${BLB}                                      ${BLU}=>${PUR}${NCR}] 99%"
+COMPL="[${GRB}                                        ${NCR}] 100%"
 
 echo -ne "${PUR}${STAGE0}${NC}${PROG0}\r"
 # do the git stuff and if there is an error, quit
@@ -108,7 +115,9 @@ docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.c
 echo -ne "${PUR}${STAGE5}${NCR}${PROG5}\r"
 docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
 
-# git checkout main
+echo -ne "${PUR}${STAGE6}${NCR}${PROG6}\r"
 git checkout main &> /dev/null
 
-echo -ne "${GRE}$STAGE6${NCR}"
+echo -ne "${GRE}${STAGEC}${NCR}${COMPL}\r"
+
+

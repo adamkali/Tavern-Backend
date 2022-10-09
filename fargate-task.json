@@ -1,0 +1,31 @@
+{
+    "family": "tavern", 
+    "networkMode": "awsvpc", 
+    "containerDefinitions": [
+        {
+            "name": "tavern-profile", 
+            "image": "739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:0.1", 
+            "portMappings": [
+                {
+                    "containerPort": 10000, 
+                    "hostPort": 10000, 
+                    "protocol": "tcp"
+                }
+            ], 
+            "essential": true, 
+            "entryPoint": [
+                "sh",
+		"-c"
+            ], 
+            "command": [
+                "/bin/sh -c '/TavernProfile prod'"
+            ]
+        }
+    ], 
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "executionRoleArn": "arn:aws:iam::739810740537:role/ecsTaskExecutionRole",
+    "cpu": "1024", 
+    "memory": "2048"
+}
