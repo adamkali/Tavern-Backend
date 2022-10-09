@@ -87,6 +87,7 @@ func main() {
 	entries.StartLogging()
 	http.Handle("/api/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Send back "Alive and well"
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Alive and well."))
 	}))
 	http.Handle(userController.H.AuthPath,
@@ -160,7 +161,7 @@ func main() {
 			relsController.H.Sanitize(relsController.AuthGetRelationships))))
 	// Print the server host and port
 	fmt.Printf("\nHost:Port:: %s:%d\n", config.Server.Host, config.Server.Port)
-	err = http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", config.Server.Port), nil)
 	if err != nil {
 		fmt.Println(err)
 	}
