@@ -110,8 +110,8 @@ echo -ne "${PUR}${STAGE3}${NCR}${PROG3}\r"
 docker build -t tavern-profile-beor .  || quit
 
 echo -ne "${PUR}${STAGE4}${NCR}${PROG4}\r"
-# docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
-docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR || quit
+docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
+# docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR || quit
 
 echo -ne "${PUR}${STAGE5}${NCR}${PROG5}\r"
 docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR &> /dev/null || quit
