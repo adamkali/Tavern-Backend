@@ -159,7 +159,7 @@ func main() {
 		cors.Handler(http.HandlerFunc(
 			relsController.H.Sanitize(relsController.AuthGetRelationships))))
 	// Print the server host and port
-	fmt.Printf("%s:%d", config.Server.Host, config.Server.Port)
+	fmt.Printf("\nHost:Port:: %s:%d\n", config.Server.Host, config.Server.Port)
 	err = http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port), nil)
 	if err != nil {
 		fmt.Println(err)
