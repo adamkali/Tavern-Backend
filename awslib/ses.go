@@ -49,7 +49,7 @@ func SendEmail(
 		return "", err
 	}
 
-	// Assemble the email.
+	// Assemble the email. and send from tavernregister@gmail.com
 	input := &ses.SendEmailInput{
 		Destination: &ses.Destination{
 			ToAddresses: []*string{
@@ -62,13 +62,18 @@ func SendEmail(
 					Charset: aws.String("UTF-8"),
 					Data:    aws.String(buff.String()),
 				},
+				Text: &ses.Content{
+					Charset: aws.String("UTF-8"),
+					Data: aws.String("Thank you for registering with Tavern!" +
+						" Please use this code to complete your registration: " + act.AuthPin),
+				},
 			},
 			Subject: &ses.Content{
 				Charset: aws.String("UTF-8"),
-				Data:    aws.String("Tavern - Email Verification"),
+				Data:    aws.String("Tavern Registration"),
 			},
 		},
-		Source: aws.String("tavernregister@gmail.com"),
+		Source: aws.String(" " + config.GetEmailConfig().Username + " "),
 	}
 
 	// Attempt to send the email.
