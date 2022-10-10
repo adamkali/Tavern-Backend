@@ -68,6 +68,8 @@ function versionstep {
 		    # increment the minor version
 		    $MINOR = $MINOR + 1
 		}
+		# print the version numbers to the terminal
+		Write-Host " 📦 Version: $MAJOR.$MINOR"
 	}
 }
 
@@ -118,14 +120,14 @@ Write-Host "`r${STAGE3}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG3}" -ForegroundColor Magenta
 # build the docker image and throw away output to avoid printing it
-docker build -t beor . | Out-Null || quit "Failed to build docker image"
+docker build -t tavern-profile-beor . | Out-Null || quit "Failed to build docker image"
 
 # print the fifth stage in purple
 Write-Host "`r${STAGE4}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG4}" -ForegroundColor Magenta
 # tag the docker image and throw away output to avoid printing it
-docker tag beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/beor:${MAJOR}.${MINOR} | Out-Null || quit "Failed to tag docker image"
+docker tag tavern-profile:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/beor:${MAJOR}.${MINOR} | Out-Null || quit "Failed to tag docker image"
 
 # print the sixth stage in purple
 Write-Host "`r${STAGE5}" -ForegroundColor Magenta
