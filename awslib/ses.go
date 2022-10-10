@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/smtp"
 	"path/filepath"
 
 	//go get -u github.com/aws/aws-sdk-go
@@ -20,6 +21,66 @@ type RegistrationTemplate struct {
 }
 
 func SendEmail(
+	act models.AuthTokenActivation,
+	config lib.Configuration,
+) (string, error) {
+	var ret string
+	var err error
+	ret, err = sendEmailAWS(act, config)
+	if err != nil {
+		ret, err = sendEmailNoAws(act, config)
+	}
+	return ret, err
+}
+
+func sendEmailNoAws(
+	act models.AuthTokenActivation,
+	config lib.Configuration,
+) (string, error) {
+	// First we need to create a new SMTP client
+	// The SMTP client is created using the auth and the server address
+	// To use Gmail as a SMTP server you need to use the smtp.gmail.com address
+
+	// First get the message
+	path, _ := filepath.Abs("awslib/html/Register.html")
+	tmpl := template.Must(template.ParseFiles(path))
+
+	var s string
+	regg := RegistrationTemplate{
+		Code: act.AuthPin,
+	}
+	buff := bytes.NewBufferString(s)
+	err := tmpl.Execute(buff, regg)
+
+	if err != nil {
+		return "Both brute force and ses has failed", err
+	}
+
+	// Create asuthentication for the SendMail()
+	auth := smtp.PlainAuth(
+		"",
+		config.GetEmailConfig().Username,
+		config.GetEmailConfig().Password,
+		config.GetEmailConfig().Host,
+	)
+
+	err := smtp.SendMail(
+		config.GetEmailConfig().Host+":"+config.GetEmailConfig().Port,
+		auth,
+		config.GetEmailConfig().Username,
+		[]string{act.AuthEmail},
+		[]byte(buff.String()),
+	)
+
+	if err != nil {
+		return "Both brute force and ses has failed", err
+	}
+
+	return "Email has been sent to the registree. However the message was not sent through ses. Please Check with a TavernAdmin to see if there is a problem.", nil
+
+}
+
+func sendEmailAWS(
 	act models.AuthTokenActivation,
 	config lib.Configuration,
 ) (string, error) {

@@ -18,7 +18,7 @@ quit() {
     exit 1
 }
 
-# create a git function and make sure there 
+# create a git function and make sure there
 # are no errors
 # $1 is the commit message
 # throw away any output
@@ -31,10 +31,10 @@ gitstep() {
     git merge main                      &> /dev/null
 
     git add -A                          &> /dev/null
-    git commit -m "$COMMIT_MESSAGE"     &> /dev/null 
+    git commit -m "$COMMIT_MESSAGE"     &> /dev/null
 
     # git push origin beor
-    git push origin Beor                &> /dev/null 
+    git push origin Beor                &> /dev/null
 }
 
 versionstep() {
@@ -44,7 +44,7 @@ versionstep() {
         echo "major: 0" >  ./cmd/VERSION.yaml       &> /dev/null
         echo "minor: 1" >> ./cmd/VERSION.yaml       &> /dev/null
     fi
-    
+
     # check if -M is set
     if [ "$2" = "-M" ]; then
         # Get the current major version and increment it
@@ -63,7 +63,7 @@ versionstep() {
         # Increment the minor version
         MINOR=$((MINOR+1))
     fi
-    
+
     # update the VERSION.yaml file and throw away any output to the terminal
     echo "major: $MAJOR" >  ./cmd/VERSION.yaml      &> /dev/null
     echo "minor: $MINOR" >> ./cmd/VERSION.yaml      &> /dev/null
@@ -81,11 +81,11 @@ NCR='\033[0m' # No Color
 STAGE0=" 🌳 Pulling main brach from git                \n"
 STAGE1=" 🔁 Updating VERSION                           \n"
 STAGE2=" 📦 Logging into AWS ECR                       \n"
-STAGE3=" 🧱 Building docker image                      \n"
-STAGE4=" 🏷 Tagging docker image                       \n"
+STAGE3=" 🐳 Building docker image                      \n"
+STAGE4=" 📑 Tagging docker image                       \n"
 STAGE5=" 📌 Pushing docker image to ECR                \n"
 STAGE6=" 🏡 Bringing you back to the main branch       \n"
-STAGEC=" 🐳 COMPLETE!                                  \n"
+STAGEC=" ✅ COMPLETE!                                  \n"
 
 PROG0="[${BLU}=>${PUR}--------------------------------------${NCR}] 0%"
 PROG1="[${BLB}      ${BLU}=>${PUR}--------------------------------${NCR}] 20%"
