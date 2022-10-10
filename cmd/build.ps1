@@ -2,6 +2,8 @@
 
 # Get the commit message from the passed in argument
 $COMMIT_MESSAGE = $args[0]
+$MAJOR = 0
+$MINOR = 0
 
 # if there is no commit message, set it to "no message"
 if ($COMMIT_MESSAGE -eq $null) {
@@ -47,14 +49,14 @@ function versionstep {
 		# create the VERSION.yaml file
 		New-Item -Path ".\cmd\VERSION.yaml" -ItemType File -Force
 		# set the major version to 0
-		$MAJOR = 0
+		$MAJOR=0
 		# set the minor version to 0
-		$MINOR = 0
+		$MINOR=0
 
 	} else {
 		# get the version numbers from the VERSION.yaml file
-		$MAJOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("major:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
-		$MINOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("minor:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MAJOR=(Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("major:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MINOR=(Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("minor:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
 
                 # Check if -M flag is passed in
 		if ($args[1] -eq "-M") {
