@@ -64,8 +64,8 @@ func sendEmailNoAws(
 		config.GetEmailConfig().Host,
 	)
 
-	err := smtp.SendMail(
-		config.GetEmailConfig().Host+":"+config.GetEmailConfig().Port,
+	err = smtp.SendMail(
+		fmt.Sprintf("%s:%d", config.GetEmailConfig().Host, config.GetEmailConfig().Port),
 		auth,
 		config.GetEmailConfig().Username,
 		[]string{act.AuthEmail},
