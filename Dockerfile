@@ -21,7 +21,7 @@ WORKDIR /
 # copy the source code to the working directory
 COPY . /go/src/Tavern-Backend/
 COPY ./env /Files/env/
-COPY ./aws /Files/awslib/
+COPY ./awslib /Files/awslib/
 
 WORKDIR /go/src/Tavern-Backend
 
