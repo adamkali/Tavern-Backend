@@ -54,9 +54,13 @@ function versionstep {
 		$MINOR=0
 
 	} else {
-		# get the version numbers from the VERSION.yaml file
+		# get the version numbers from the VERSION.yaml file as numbers
 		$MAJOR=(Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("major:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
 		$MINOR=(Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("minor:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+
+		# change MAJOR and MINOR to numbers
+		$MAJOR = [int]$MAJOR
+		$MINOR = [int]$MINOR
 
                 # Check if -M flag is passed in
 		if ($args[1] -eq "-M") {
@@ -68,6 +72,11 @@ function versionstep {
 		    # increment the minor version
 		    $MINOR = $MINOR + 1
 		}
+
+		# write the new version numbers to the VERSION.yaml file
+		$version = "major: $MAJOR`nminor: $MINOR"
+		$version | Out-File -FilePath ".\cmd\VERSION.yaml"
+
 		# print the version numbers to the terminal
 		Write-Host " 📦 Version: $MAJOR.$MINOR"
 	}
@@ -127,7 +136,7 @@ Write-Host "`r${STAGE4}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG4}" -ForegroundColor Magenta
 # tag the docker image and throw away output to avoid printing it
-docker tag tavern-profile:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/beor:${MAJOR}.${MINOR} | Out-Null || quit "Failed to tag docker image"
+docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/beor:${MAJOR}.${MINOR} | Out-Null || quit "Failed to tag docker image"
 
 # print the sixth stage in purple
 Write-Host "`r${STAGE5}" -ForegroundColor Magenta
