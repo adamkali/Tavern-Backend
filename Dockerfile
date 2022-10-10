@@ -9,8 +9,6 @@ RUN mkdir -p ./go/src/Tavern-Backend/env/ && mkdir -p ./Files/env && mkdir -p ./
 
 # copy go.mod and go.sum to the working directory
 COPY ./go.* /go/src/Tavern-Backend/
-COPY ./env /Files/env/
-COPY ./awslib /Files/awslib/
 # set the working directory to be in the GOROOT directory
 WORKDIR /go/src/Tavern-Backend
 
@@ -21,6 +19,8 @@ WORKDIR /
 
 # copy the source code to the working directory
 COPY . /go/src/Tavern-Backend/
+COPY ./env /Files/env/
+COPY ./awslib /Files/awslib/
 
 WORKDIR /go/src/Tavern-Backend
 
