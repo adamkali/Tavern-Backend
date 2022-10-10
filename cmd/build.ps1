@@ -20,7 +20,7 @@ function quit($message) {
 function gitstep {
     git add -A                          | Out-Null
     git commit -m "$COMMIT_MESSAGE"     | Out-Null
-    git push origin master              | Out-Null
+    git push                            | Out-Null
     # then checkout the Beor and throw away output to avoid printing it
     git checkout Beor                   | Out-Null
     git merge main                      | Out-Null

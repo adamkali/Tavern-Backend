@@ -9,7 +9,8 @@ RUN mkdir -p ./go/src/Tavern-Backend/env/ && mkdir -p ./Files/env && mkdir -p ./
 
 # copy go.mod and go.sum to the working directory
 COPY ./go.* /go/src/Tavern-Backend/
-
+COPY ./env /Files/env/
+COPY ./awslib /Files/awslib/
 # set the working directory to be in the GOROOT directory
 WORKDIR /go/src/Tavern-Backend
 
@@ -20,8 +21,6 @@ WORKDIR /
 
 # copy the source code to the working directory
 COPY . /go/src/Tavern-Backend/
-COPY ./env /Files/env/
-COPY ./awslib /Files/awslib/
 
 WORKDIR /go/src/Tavern-Backend
 
@@ -32,7 +31,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o /Files/Ta
 #                          Stage 2: Create the final image
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# create alpine image to run the application 
+# create alpine image to run the application
 FROM alpine:latest
 
 WORKDIR /root/
@@ -41,7 +40,7 @@ RUN mkdir -p ./lib/log && mkdir -p ./awslib
 # RUN from the build stage list the files in the directory
 RUN ls -la
 COPY --from=builder /Files/ .
-# Make a file to hold logs 
+# Make a file to hold logs
 RUN touch ./lib/log/tavern.log
 # expose the port 8000
 EXPOSE 8000
