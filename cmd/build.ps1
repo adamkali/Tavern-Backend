@@ -43,9 +43,9 @@ function returntoMain {
 # create a function to do the version stuff
 function versionstep {
 	# check if there is a VERSION.yaml file if there is not then create one
-	if (!(Test-Path -Path "./cmd/VERSION.yaml")) {
+	if (!(Test-Path -Path ".\cmd\VERSION.yaml")) {
 		# create the VERSION.yaml file
-		New-Item -Path "./cmd/VERSION.yaml" -ItemType File -Force
+		New-Item -Path ".\cmd\VERSION.yaml" -ItemType File -Force
 		# set the major version to 0
 		$MAJOR = 0
 		# set the minor version to 0
@@ -53,8 +53,8 @@ function versionstep {
 
 	} else {
 		# get the version numbers from the VERSION.yaml file
-		$MAJOR = (Get-Content -Path "./cmd/VERSION.yaml" | Select-String -Pattern "major:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
-		$MINOR = (Get-Content -Path "./cmd/VERSION.yaml" | Select-String -Pattern "minor:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MAJOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern "major:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MINOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern "minor:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
 
 		if ($args[1] -eq "-M") {
 		    # increment the major version
