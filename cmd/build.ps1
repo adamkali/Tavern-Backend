@@ -53,15 +53,16 @@ function versionstep {
 
 	} else {
 		# get the version numbers from the VERSION.yaml file
-		$MAJOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern "major:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
-		$MINOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern "minor:" | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MAJOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("major:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
+		$MINOR = (Get-Content -Path ".\cmd\VERSION.yaml" | Select-String -Pattern ("minor:") | ForEach-Object { $_.Line.Split(":")[1] }).Trim()
 
+                # Check if -M flag is passed in
 		if ($args[1] -eq "-M") {
 		    # increment the major version
 		    $MAJOR = $MAJOR + 1
 		    # set the minor version to 0
 		    $MINOR = 0
-		} elseif ($args[1] -eq "-m") {
+		} else {
 		    # increment the minor version
 		    $MINOR = $MINOR + 1
 		}
