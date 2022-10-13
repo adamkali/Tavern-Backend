@@ -120,7 +120,7 @@ Write-Host "`r${STAGE1}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG1}" -ForegroundColor Magenta
 # do the version stuff
-$VERSION = (versionstep | Out-Null) || quit "Could not update VERSION"
+$VERSION = versionstep
 
 # print the third stage in purple
 Write-Host "`r${STAGE2}" -ForegroundColor Magenta
