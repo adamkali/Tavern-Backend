@@ -4,6 +4,7 @@
 $COMMIT_MESSAGE = $args[0]
 $MAJOR = 0
 $MINOR = 0
+$VERSION=0.0
 
 # if there is no commit message, set it to "no message"
 if ($COMMIT_MESSAGE -eq $null) {
@@ -80,6 +81,9 @@ function versionstep {
 
 		# print the version numbers to the terminal
 		Write-Host " 📦 Version: $MAJOR.$MINOR"
+
+		# set the version to a string
+		$VERSION="$MAJOR.$MINOR"
 	}
 }
 
@@ -137,14 +141,14 @@ Write-Host "`r${STAGE4}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG4}" -ForegroundColor Magenta
 # tag the docker image and throw away output to avoid printing it
-docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR | Out-Null || quit "Failed to tag docker image"
+docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null || quit "Failed to tag docker image"
 
 # print the sixth stage in purple
 Write-Host "`r${STAGE5}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG5}" -ForegroundColor Magenta
 # push the docker image and throw away output to avoid printing it
-docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$MAJOR.$MINOR | Out-Null || quit "Failed to push docker image to ECR"
+docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null || quit "Failed to push docker image to ECR"
 
 # print the seventh stage in purple
 Write-Host "`r${STAGE6}" -ForegroundColor Magenta
@@ -159,7 +163,7 @@ Write-Host "`r${STAGEC}" -ForegroundColor Green
 Write-Host " ${COMPL}" -ForegroundColor Green
 
 # print "Tavern Profile Pushed as Beor: with the new version number in green
-Write-Host " 🍺 Tavern Profile Pushed as Beor: $MAJOR.$MINOR" -ForegroundColor Green
+Write-Host " 🍺 Tavern Profile Pushed as Beor v$VERSION" -ForegroundColor Green
 
 
 
