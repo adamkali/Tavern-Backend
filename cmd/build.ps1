@@ -83,7 +83,7 @@ function versionstep {
 		Write-Host " 📦 Version: $MAJOR.$MINOR"
 
 		# set the version to a string
-		$VERSION="$MAJOR.$MINOR"
+		return "$MAJOR.$MINOR"
 	}
 }
 
@@ -113,49 +113,49 @@ Write-Host " ${STAGE0}" -ForegroundColor Magenta
 Write-Host " ${PROG0}" -ForegroundColor Magenta
 
 # checkout the Beor branch if there is a problem then use the quit function
-gitstep | Out-Null || quit "Could not checkout Beor branch"
+(gitstep | Out-Null) || quit "Could not checkout Beor branch"
 
 # print the second stage in purple and delete the first stage
 Write-Host "`r${STAGE1}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG1}" -ForegroundColor Magenta
 # do the version stuff
-versionstep || quit "Failed to update VERSION"
+$VERSION = (versionstep | Out-Null) || quit "Could not update VERSION"
 
 # print the third stage in purple
 Write-Host "`r${STAGE2}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG2}" -ForegroundColor Magenta
 # login to ECR and throw away output to avoid printing it
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com | Out-Null || quit "Failed to login to ECR"
+(aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 739810740537.dkr.ecr.us-east-1.amazonaws.com | Out-Null) || quit "Failed to login to ECR"
 
 # print the fourth stage in purple
 Write-Host "`r${STAGE3}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG3}" -ForegroundColor Magenta
 # build the docker image and throw away output to avoid printing it
-docker build -t tavern-profile-beor . | Out-Null || quit "Failed to build docker image"
+(docker build -t tavern-profile-beor . | Out-Null) || quit "Failed to build docker image"
 
 # print the fifth stage in purple
 Write-Host "`r${STAGE4}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG4}" -ForegroundColor Magenta
 # tag the docker image and throw away output to avoid printing it
-docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null || quit "Failed to tag docker image"
+(docker tag tavern-profile-beor:latest 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null) || quit "Failed to tag docker image"
 
 # print the sixth stage in purple
 Write-Host "`r${STAGE5}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG5}" -ForegroundColor Magenta
 # push the docker image and throw away output to avoid printing it
-docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null || quit "Failed to push docker image to ECR"
+(docker push 739810740537.dkr.ecr.us-east-1.amazonaws.com/tavern-profile-beor:$VERSION | Out-Null) || quit "Failed to push docker image to ECR"
 
 # print the seventh stage in purple
 Write-Host "`r${STAGE6}" -ForegroundColor Magenta
 # print the progress bar
 Write-Host " ${PROG6}" -ForegroundColor Magenta
 # checkout the main branch
-returntoMain || quit "Failed to checkout main branch"
+(returntoMain | Out-Null) || quit "Failed to checkout main branch"
 
 # print the complete stage in green
 Write-Host "`r${STAGEC}" -ForegroundColor Green
